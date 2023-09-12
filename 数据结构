@@ -1,0 +1,2399 @@
+# 				高级数据结构
+
+**带权并查集**
+
+权值为集合大小
+
+```c++
+int find (int x)
+{
+	if (x == fa[x]) return x;
+    int root = find(fa[x]); // 计算集合代表
+    d[x] += d[fa[x]];       // 维护数组d，对边权求和
+    return fa[x] = root;    // 路径压缩
+}
+int merge(int x, int y)
+{
+    x = find(x), y = find(y);
+    fa[x] = y, d[x] = size[y];
+    size[y] += size[x];
+}
+```
+
+权值为距离时
+
+```c++
+#include<bits/stdc++.h>
+using namespace std;
+const int N = 1e5 + 5;
+int s[N];//集
+int d[N];//到根节点的权值
+int ans;
+void init_set()
+{
+	for (int i = 0; i < N; i++) {
+		s[i] = i; d[i] = 0;
+	}
+}
+int find_set(int  x)
+{
+	if (x != s[x])
+	{
+		int t = s[x];//记录父节点
+		s[x] = find_set(s[x]);//路径压缩，递归最后返回的是根节点
+		d[x] += d[t];//权值更新为x到根节点的权值
+	}
+	return s[x];
+}
+void merge_set(int a, int b, int v)
+{
+	int roota = find_set(a), rootb = find_set(b);
+	if (roota != rootb)
+	{
+		s[roota] = rootb;
+		d[roota] = d[b] - d[a] + v;//更新距离
+	}
+}
+```
+
+**树状数组**
+
+单修+区查，区修+单查
+
+```c++
+#include<bits/stdc++.h>
+using namespace std;
+const int N = 1e5 + 5;
+#define lowbit(x) ((x)&-(x))
+int tree[N];
+void update(int x, int d)
+{
+	while (x <= N)
+	{
+		tree[x] += d;
+		x += lowbit(x);
+	}
+}
+int sum(int x)
+{
+	int ans = 0;
+	while (x > 0)
+	{
+		ans += tree[x];
+		x -= lowbit(x);
+	}
+	return ans;
+}
+int main()
+{
+	int a[11] = { 0,4,5,6,7,8,9,10,11,12,13 };
+	for (int i = 1; i <= 10; i++)
+		update(i, a[i]);//单点修改
+	cout << sum(8) - sum(4)<<endl;//区间查询
+	//----------------------------------------
+	int l, r,n;
+	cin >> n;
+	cin >> l >> r;
+	update(l, 1);
+	update(r + 1, -1);//区间修改
+	for (int i = 1; i <= n; i++)
+	{
+		if (i != n)
+			cout << sum(i);
+		else
+			cout << sum(i) << endl;//单点查询
+	}
+
+	return 0;
+}
+```
+
+**线段树**
+
+区间修改+区间查询（区间和）
+
+```c++
+//洛谷3372
+#include<bits/stdc++.h>
+using namespace std;
+#define ll long long
+const int N = 1e5 + 5;
+ll a[N];//记录数列的元素，从1开始
+ll tree[N << 2];//tree[i]表示一个区间的值
+ll tag[N << 2];//懒惰标记
+ll ls(ll p) { return p << 1; }
+ll rs(ll p) { return p << 1 | 1; }
+void push_up(ll p)
+{
+	tree[p] = tree[ls(p)] + tree[rs(p)];//如果是求最小值，改为min(tree[ls(p)],tree[rs(p)]);
+}
+void build(ll p, ll pl, ll pr)
+{
+	tag[p] = 0;
+	if (pl == pr) { tree[p] = a[pl]; return; }
+	ll mid = (pl + pr) >> 1;
+	build(ls(p), pl, mid);
+	build(rs(p), mid + 1, pr);
+	push_up(p);//更新区间和
+
+}
+void addtag(ll p, ll pl, ll pr, ll d)
+{
+	tag[p] += d;//打上懒惰标记
+	tree[p] += d * (pr - pl + 1);//更新值
+}
+void push_down(ll p, ll pl, ll pr)//不能覆盖时，把标记传给子树
+{
+	if (tag[p])
+	{
+		ll mid = (pl + pr) >> 1;
+		addtag(ls(p), pl, mid, tag[p]);
+		addtag(rs(p), mid + 1, pr, tag[p]);
+		tag[p] = 0;
+	}
+}
+void update(ll L, ll R, ll p, ll pl, ll pr, ll d)//L~R每个数加d
+{
+	if (L <= pl && R >= pr)
+	{
+		addtag(p, pl, pr, d);//完全覆盖可以直接标记全部
+		return;
+	}
+	push_down(p, pl, pr);//不完全覆盖，下传到子树
+	ll mid = (pl + pr) >> 1;
+	if (L <= mid)
+		update(L, R, ls(p), pl, mid, d);
+	if (R > mid)
+		update(L, R, rs(p), mid + 1, pr, d);
+	push_up(p);//更行区间和
+}
+ll query(ll L, ll R, ll p, ll pl, ll pr)
+{
+	if (pl >= L && pr <= R)
+	{
+		return tree[p];
+	}
+	push_down(p, pl, pr);
+	ll mid = (pl + pr) >> 1, res = 0;
+	if (L <= mid)res += query(L, R, ls(p), pl, mid);
+	if (R > mid)res += query(L, R, rs(p), mid + 1, pr);
+	return res;
+}
+
+int main()
+{
+	ll n, m;
+	cin >> n >> m;
+	for (int i = 1; i <= n; i++)scanf("%lld", &a[i]);
+	build(1, 1, n);
+	while (m--)
+	{
+		ll f, L, R, d;
+		scanf("%lld", &f);
+		if (f == 1)
+		{
+			scanf("%lld%lld%lld", &L, &R, &d);
+			update(L, R, 1, 1, n, d);
+		}
+		else
+		{
+			scanf("%lld%lld", &L, &R);
+			printf("%lld\n", query(L, R, 1, 1, n));
+		}
+	}
+	return 0;
+}
+```
+
+**区间最值修改,比如a[i]=min(a[i],x)，区间求和，区间最值查询**
+
+```c++
+//hdu5306
+#include<bits/stdc++.h>
+using namespace std;
+#define ll long long
+const int N = 1e6 + 5;
+ll sum[N << 2], ma[N << 2], se[N << 2], num[N << 2];
+inline ll ls(ll p) { return p << 1; }
+inline ll rs(ll p) { return p << 1 | 1; }
+
+void push_up(int p)
+{
+	sum[p] = sum[ls(p)] + sum[rs(p)];
+	ma[p] = max(ma[ls(p)], ma[rs(p)]);
+	if (ma[ls(p)] == ma[rs(p)])
+	{
+		se[p] = max(se[ls(p)], se[rs(p)]);
+		num[p] = num[ls(p)] + num[rs(p)];
+	}
+	else
+	{
+		se[p] = max(se[ls(p)], se[rs(p)]);
+		se[p] = max(se[p], min(ma[ls(p)], ma[rs(p)]));
+		num[p] = ma[ls(p)] > ma[rs(p)] ? num[ls(p)] : num[rs(p)];
+	}
+}
+void build(int p, int pl, int pr)
+{
+	if (pl == pr)
+	{
+		scanf("%lld", &sum[p]);
+		ma[p] = sum[p];
+		se[p] = -1;
+		num[p] = 1;
+		return;
+	}
+	ll mid = (pl + pr) >> 1;
+	build(ls(p), pl, mid);
+	build(rs(p), mid + 1, pr);
+	push_up(p);
+}
+inline void addtag(int p, int x)
+{
+	if (x >= ma[p])return;
+	sum[p] -= num[p] * (ma[p] - x);
+	ma[p] = x;
+}
+inline void push_down(int p)
+{
+	addtag(ls(p), ma[p]);
+	addtag(rs(p), ma[p]);
+}
+void update(int L, int R, int p, int pl, int pr, int x)
+{
+	if (x >= ma[p])return;
+	if (L <= pl && R >= pr && se[p] < x)
+	{
+		addtag(p, x);
+		return;
+	}
+	push_down(p);
+	ll mid = (pl + pr) >> 1;
+	if (L <= mid)update(L, R, ls(p), pl, mid, x);
+	if (R > mid)update(L, R, rs(p), mid + 1, pr, x);
+	push_up(p);
+}
+int query_max(int L, int R, int p, int pl, int pr)
+{
+	if (L <= pl && R >= pr)
+	{
+		return ma[p];
+	}
+	push_down(p);
+	ll mid = (pl + pr) >> 1;
+	int res = 0;
+	if (L <= mid)res = query_max(L, R, ls(p), pl, mid);
+	if (R > mid)res = max(res, query_max(L, R, rs(p), mid + 1, pr));
+	return res;
+}
+ll query_sum(ll L, ll R, ll p, ll pl, ll pr)
+{
+	if (L <= pl && R >= pr)
+	{
+		return sum[p];
+	}
+	push_down(p);
+	ll mid = (pl + pr) >> 1, res = 0;
+	if (L <= mid)res += query_sum(L, R, ls(p), pl, mid);
+	if (R > mid)res += query_sum(L, R, rs(p), mid + 1, pr);
+	return res;
+}
+int main()
+{
+	int t;
+	cin >> t;
+	while (t--)
+	{
+		int n, m;
+		scanf("%d%d", &n, &m);
+		build(1, 1, n);
+		while (m--)
+		{
+			int q, L, R, x;
+			scanf("%d%d%d", &q, &L, &R);
+			if (q == 0) { scanf("%d", &x); update(L, R, 1, 1, n, x); }
+			if (q == 1) { printf("%d\n", query_max(L, R, 1, 1, n)); }
+			if (q == 2) { printf("%lld\n", query_sum(L, R, 1, 1, n)); }
+
+		}
+	}return 0;
+}
+```
+
+**区间开方(hdu4027)势能线段树**
+
+```c++
+#include<iostream>
+#include<cmath>
+using namespace std;
+#define ll long long
+int pl(int p) { return p << 1; }
+int pr(int p) { return p << 1 | 1; }
+ll tree[100005 << 2];
+void pushup(ll p)
+{
+    tree[p] = tree[pl(p)] + tree[pr(p)];
+}
+void build(int p, int l, int r)
+{
+    if (l == r)
+    {
+        scanf("%lld", &tree[p]);
+        return;
+    }
+    int mid = l + r >> 1;
+    build(pl(p), l, mid);
+    build(pr(p), mid + 1, r);
+    pushup(p);
+}
+void update(int p, int l, int r, int L, int R)
+{
+    if (l >= L && r <= R && tree[p] == r - l + 1)
+        return;
+    if (l == r)
+    {
+        tree[p] = (ll)sqrt(1.0 * tree[p]);
+        return;
+    }
+    int mid = l + r >> 1;
+    if (L <= mid)update(pl(p), l, mid, L, R);
+    if (R > mid)update(pr(p), mid + 1, r, L, R);
+    pushup(p);
+}
+ll  query(int p, int l, int r, int L, int R)
+{
+    if (l >= L && r <= R)
+    {
+        return tree[p];
+    }
+    ll mid = l + r >> 1, ans = 0;
+    if (L <= mid)ans += query(pl(p), l, mid, L, R);
+    if (R > mid)ans += query(pr(p), mid + 1, r, L, R);
+    pushup(p);
+    return ans;
+}
+int main()
+{
+    int n, k = 1;
+    while (scanf("%d", &n) != EOF)
+    {
+        printf("Case #%d:\n", k++);
+        build(1, 1, n);
+        int q;
+        scanf("%d", &q);
+        while (q--)
+        {
+            int flag, x, y;
+            scanf("%d%d%d", &flag, &x, &y);
+            if (x > y)
+                swap(x, y);
+            if (flag == 0)
+            {
+                update(1, 1, n, x, y);
+            }
+            else
+            {
+                printf("%lld\n", query(1, 1, n, x, y));
+            }
+
+        }
+    }
+    return 0;
+}
+```
+
+**区间加，乘，赋值，区间求和，求平方和，求立方和**
+
+```c++
+//hud4578
+#include<iostream>
+using namespace std;
+const int mod = 10007;
+const int N = 100005;
+int pl(int p) { return p << 1; }
+int pr(int p) { return p << 1 | 1; }
+int sum[3][N << 2], f[2][N << 2];
+void pushup(int p)
+{
+	for (int i = 0; i < 3; i++)
+		sum[i][p] = (sum[i][pl(p)] % mod + sum[i][pr(p)] % mod)%mod;
+}
+void build(int p, int l, int r)
+{
+	sum[0][p] = 0;
+	sum[1][p] = 0;
+	sum[2][p] = 0;
+	f[0][p] = 0;
+	f[1][p] = 1;
+	if (l == r)
+	{
+		return;
+	}
+	int mid = l + r >> 1;
+	build(pl(p), l, mid);
+	build(pr(p), mid + 1, r);
+}
+void add(int p, int l, int r, int c)
+{
+	if (c == 0)
+		return;
+	int len = (r - l + 1) % mod, pre0 = sum[0][p] % mod, pre1 = sum[1][p] % mod;
+	c %= mod;
+	sum[0][p] += len * c;
+	sum[0][p] %= mod;
+
+	sum[1][p] += (2 * c * pre0) % mod + ((len * c % mod) * c) % mod;
+	sum[1][p] %= mod;
+
+	sum[2][p] += (3 * c * pre1) % mod + (((3 * c * c) % mod) * pre0) % mod + (((((len * c) % mod) * c) % mod) * c) % mod;
+	sum[2][p] %= mod;
+}
+void muit(int p, int c)
+{
+	if (c == 1)
+		return;
+	int x = c % mod;
+
+	sum[0][p] *= x;
+	sum[0][p] %= mod;
+
+	x = x * c;
+	x %= mod;
+
+	sum[1][p] *= x;
+	sum[1][p] %= mod;
+
+	x = x * c;
+	x %= mod;
+
+	sum[2][p] *= x;
+	sum[2][p] %= mod;
+}
+void push_down(int p, int l, int r)
+{
+	if (f[1][p] != 1)
+	{
+		f[1][pl(p)] *= f[1][p];
+		f[1][pl(p)] %= mod;
+		f[1][pr(p)] *= f[1][p];
+		f[1][pr(p)] %= mod;
+
+		f[0][pl(p)] *= f[1][p];
+		f[0][pl(p)] %= mod;
+		f[0][pr(p)] *= f[1][p];
+		f[0][pr(p)] %= mod;
+		muit(pl(p), f[1][p]);
+		muit(pr(p), f[1][p]);
+		f[1][p] = 1;
+	}
+	if (f[0][p] != 0)
+	{
+		int mid = l + r >> 1;
+		f[0][pl(p)] += f[0][p];
+		f[0][pl(p)] %= mod;
+		f[0][pr(p)] += f[0][p];
+		f[0][pr(p)] %= mod;
+		add(pl(p), l, mid, f[0][p]);
+		add(pr(p), mid + 1, r, f[0][p]);
+		f[0][p] = 0;//注意要置零
+	}
+}
+void update(int p, int l, int r, int L, int R, int op, int c)
+{
+	if (l >= L && r <= R)
+	{
+		if (op == 1)
+		{
+			f[0][p] += c;
+			f[0][p] %= mod;
+			add(p, l, r, c);
+		}
+		else if (op == 2)
+		{
+			f[0][p] *= c;
+			f[0][p] %= mod;
+			f[1][p] *= c;
+			f[1][p] %= mod;
+			muit(p, c);
+		}
+		else if (op == 3)
+		{
+			f[0][p] = c;
+			f[1][p] = 0;
+			muit(p, 0);
+			add(p, l, r, c);
+		}
+		return;
+	}
+	push_down(p, l, r);
+	int mid = l + r >> 1;
+	if (L <= mid)
+		update(pl(p), l, mid, L, R, op, c);
+	if (R > mid)
+		update(pr(p), mid + 1, r, L, R, op, c);
+	pushup(p);
+}
+int query(int p, int l, int r, int L, int R, int c)
+{
+	if (l >= L && r <= R)
+	{
+		return sum[c][p];
+	}
+	push_down(p, l, r);
+	int mid = l + r >> 1, ans = 0;
+	if (L <= mid)ans += query(pl(p), l, mid, L, R, c);
+	if (R > mid)ans += query(pr(p), mid + 1, r, L, R, c);
+	ans %= mod;
+	pushup(p);
+	return ans;
+}
+int main()
+{
+	int n, q;
+	while (scanf("%d%d", &n, &q), n || q)
+	{
+		build(1, 1, n);
+		while (q--)
+		{
+			int flag, l, r, c;
+			scanf("%d%d%d%d", &flag, &l, &r, &c);
+			if (flag == 4)
+			{
+				printf("%d\n", query(1, 1, n, l, r, c - 1));
+			}
+			else
+			{
+				update(1, 1, n, l, r, flag, c);
+			}
+		}
+	}
+	return 0;
+}
+```
+
+**二分线段树**
+
+```c++
+//4614
+#include<iostream>
+using namespace std;
+int pl(int p) { return p << 1; }
+int pr(int p) { return p << 1 | 1; }
+int tree[50005 << 2], tag[50005 << 2];
+void push_down(int p, int l, int r)
+{
+	if (tag[p] < 0)
+		return;
+	int mid = l + r >> 1;
+	tree[pl(p)] = (mid - l + 1) * tag[p];
+	tag[pl(p)] = tag[p];
+	tree[pr(p)] = (r - mid) * tag[p];
+	tag[pr(p)] = tag[p];
+	tag[p] = -1;
+}
+void build(int p, int l, int r)
+{
+	tree[p] = 0;
+	tag[p] = -1;
+	if (l == r)
+		return;
+	int mid = l + r >> 1;
+	build(pl(p), l, mid);
+	build(pr(p), mid + 1, r);
+}
+void push_up(int p)
+{
+	tree[p] = tree[pl(p)] + tree[pr(p)];
+}
+void update(int p, int l, int r, int L, int R, int c)
+{
+	if (l >= L && r <= R)
+	{
+		tree[p] = (r - l + 1) * c;
+		tag[p] = c;
+		return;
+	}
+	push_down(p, l, r);
+	int mid = l + r >> 1;
+	if (L <= mid)
+		update(pl(p), l, mid, L, R, c);
+	if (R > mid)
+		update(pr(p), mid + 1, r, L, R, c);
+	push_up(p);
+}
+int query(int p, int l, int r, int L, int R)
+{
+	if (l >= L && r <= R)
+		return tree[p];
+	push_down(p, l, r);
+	int mid = l + r >> 1, ans = 0;
+	if (L <= mid)
+		ans += query(pl(p), l, mid, L, R);
+	if (R > mid)
+		ans += query(pr(p), mid + 1, r, L, R);
+
+	return ans;
+}
+int main()
+{
+	int t;
+	cin >> t;
+	while (t--)
+	{
+		int n, m;
+		scanf("%d%d", &n, &m);
+		build(1, 1, n);
+		//	cout << query(1, 1, n, 5, 6) << endl;
+		while (m--)
+		{
+			int flag, a, b;
+			scanf("%d%d%d", &flag, &a, &b);
+			a++;
+			b++;
+			if (flag == 1)
+			{
+				b--;
+				int l = a, r = n, st = a;
+				while (l < r)
+				{
+					int mid = l + r >> 1;
+					if (mid - st + 1 - query(1, 1, n, st, mid) >= 1)
+						r = mid;
+					else
+						l = mid + 1;
+				}
+				if (query(1, 1, n, st, r) == n - st + 1)
+				{
+					printf("Can not put any one.\n");
+					continue;
+				}
+				printf("%d ", l - 1);
+				if (n - st + 1 - query(1, 1, n, st, n) >= b)
+				{
+					r = n;
+					while (l < r)
+					{
+						int mid = l + r >> 1;
+						if (mid - st + 1 - query(1, 1, n, st, mid) >= b)
+						{
+							r = mid;
+						}
+						else
+							l = mid + 1;
+					}
+					//cout << query(1, 1, n, st, l) << endl;
+					update(1, 1, n, a, l, 1);
+					printf("%d\n", l - 1);
+					continue;
+				}
+				r = n;
+				int en = n;
+				while (l < r)
+				{
+					int mid = (l + r + 1) >> 1;
+					if (n - mid + 1 - query(1, 1, n, mid, en) >= 1)
+					{
+						l = mid;
+					}
+					else
+						r = mid - 1;
+				}
+				update(1, 1, n, a, r, 1);
+				printf("%d\n", r - 1);
+			}
+			else
+			{
+				printf("%d\n", query(1, 1, n, a, b));
+				update(1, 1, n, a, b, 0);
+			}
+		}
+		printf("\n");
+	}
+	return 0;
+}
+```
+
+**区间合并**（村庄最大连通数）
+
+```c++
+//hdu1540
+#include<bits/stdc++.h>
+using namespace std;
+const int N = 50005;
+int ls(int p) { return p << 1; }
+int rs(int p) { return p << 1 | 1; }
+int tree[N << 2], pre[N << 2], suf[N << 2];
+int history[N];
+void push_up(int p, int len)//len为节点p的长度
+{
+	pre[p] = pre[ls(p)];
+	suf[p] = suf[rs(p)];//由下到上更新信息
+	if (pre[ls(p)] == len - (len >> 1))pre[p] = pre[ls(p)] + pre[rs(p)];//左儿子都是1
+	if (suf[rs(p)] == len >> 1)suf[p] = suf[ls(p)] + suf[rs(p)];
+}
+void build(int p, int pl, int pr)
+{
+	if (pl == pr) { tree[p] = pre[p] = suf[p] = 1; return; }//初始都联通
+	int mid = (pl + pr) >> 1;
+	build(ls(p), pl, mid);
+	build(rs(p), mid + 1, pr);
+	push_up(p, pr - pl + 1);
+}
+void update(int x, int c, int p, int pl, int pr)
+{
+	if (pl == pr) { tree[p] = suf[p] = pre[p] = c; return; }//修改为c状态，0或1
+	int mid = (pl + pr) >> 1;
+	if (x <= mid)
+		update(x, c, ls(p), pl, mid);
+	else
+		update(x, c, rs(p), mid + 1, pr);
+	push_up(p, pr - pl + 1);
+}
+int query(int x, int p, int pl, int pr)
+{
+	if (pl == pr)return tree[p];
+	int mid = (pl + pr) >> 1;
+	if (x <= mid)
+	{
+		if (x + suf[ls(p)] > mid)return suf[ls(p)] + pre[rs(p)];//x到mid都是连通的
+		else
+			return query(x, ls(p), pl, mid);//无法直接计算，继续下一层递归
+	}
+	else
+	{
+		if (mid + pre[rs(p)] >= x)return pre[rs(p)] + suf[ls(p)];//mid+1~x都是连通的
+		else
+			return query(x, rs(p), mid + 1, pr);
+	}
+}
+int main()
+{
+	int n, m, tot, x;
+	while (scanf("%d%d", &n, &m) > 0)
+	{
+		build(1, 1, n);
+		tot = 0;
+		while (m--)
+		{
+			char op[10];
+			scanf("%s", op);
+			if (op[0] == 'Q') { scanf("%d", &x); printf("%d\n", query(x, 1, 1, n)); }
+			else if (op[0] == 'D')
+			{
+				scanf("%d", &x);
+				history[++tot] = x;
+				update(x, 0, 1, 1, n);
+			}
+			else
+			{
+				x = history[tot--];
+				update(x, 1, 1, 1, n);
+			}
+		}
+	}
+
+
+	return 0;
+}
+//第二个版本
+#include<iostream>
+using namespace std;
+int his[50005];
+int pl(int p) { return p << 1; }
+int pr(int p) { return p << 1 | 1; }
+struct node
+{
+	int lmax, rmax;
+}tree[50005 << 2];
+void push_up(int p, int l, int r)
+{
+	int mid = l + r >> 1;
+	tree[p].lmax = tree[pl(p)].lmax + (tree[pl(p)].lmax == mid - l + 1 ? tree[pr(p)].lmax : 0);
+	tree[p].rmax = tree[pr(p)].rmax + (tree[pr(p)].rmax == r - mid ? tree[pl(p)].rmax : 0);
+}
+void build(int p, int l, int r)
+{
+	tree[p] = { 1,1 };
+	if (l == r)
+		return;
+	int mid = l + r >> 1;
+	build(pl(p), l, mid);
+	build(pr(p), mid + 1, r);
+	push_up(p, l, r);
+}
+void update(int p, int l, int r, int idx, int c)
+{
+	if (l == r)
+	{
+		tree[p].lmax = c;
+		tree[p].rmax = c;
+		return;
+	}
+	int mid = l + r >> 1;
+	if (idx <= mid)
+		update(pl(p), l, mid, idx, c);
+	else
+		update(pr(p), mid + 1, r, idx, c);
+	push_up(p, l, r);
+}
+int query(int p, int l, int r, int idx)
+{
+	if (l == r)
+	{
+		return tree[p].lmax;
+	}
+	int mid = l + r >> 1;
+	if (idx <= mid)
+	{
+		if (idx >= mid - tree[pl(p)].rmax + 1)return tree[pl(p)].rmax + tree[pr(p)].lmax;
+		return query(pl(p), l, mid, idx);
+
+	}
+	else
+	{
+		if (idx <= mid + tree[pr(p)].lmax)return tree[pr(p)].lmax + tree[pl(p)].rmax;
+		return query(pr(p), mid + 1, r, idx);
+	}
+}
+int main()
+{
+	int n, m, cnt = 0;
+	while (cin >> n >> m)
+	{
+		build(1, 1, n);
+		while (m--)
+		{
+			char flag;
+			int x;
+			cin >> flag;
+			if (flag == 'D')
+			{
+				cin >> x;
+				update(1, 1, n, x, 0);
+				his[cnt++] = x;
+			}
+			else if (flag == 'R')
+			{
+				update(1, 1, n, his[--cnt], 1);
+			}
+			else
+			{
+				cin >> x;
+				cout << query(1, 1, n, x) << endl;
+			}
+		}
+	}
+	return 0;
+}
+```
+
+**扫描线(len1,len2)hdu1255，计算覆盖两次的面积**
+
+```c++
+#include<iostream>
+#include<algorithm>
+#include<vector>
+#include<cstdio>
+using namespace std;
+int pl(int p) { return p << 1; }
+int pr(int p) { return p << 1 | 1; }
+struct node
+{
+	int color;
+	double len1, len2;//len1是覆盖一次，len2是覆盖两次
+}tree[1005 << 3];//扫描线要多开两倍
+struct node1
+{
+	double x, y1, y2;
+	int c;
+	bool operator<(const node1& t)const//从小到大排序
+	{
+		return x < t.x;
+	}
+};
+vector<node1>line;
+vector<double>v;//记录离散化的y
+int find(double x)
+{
+	return lower_bound(v.begin(), v.end(), x) - v.begin();
+}
+void pushup(int p, int l, int r)
+{
+	if (tree[p].color)
+		tree[p].len1 = v[r + 1] - v[l];//因为是区间转化成点，要还原
+	else if (l != r)
+		tree[p].len1 = tree[pl(p)].len1 + tree[pr(p)].len1;
+	else
+		tree[p].len1 = 0;
+
+	if (tree[p].color > 1)
+		tree[p].len2 = v[r + 1] - v[l];
+	else if (tree[p].color)
+		tree[p].len2 = tree[pl(p)].len1 + tree[pr(p)].len1;//因为标记不下传，len1其实就是len2
+	else if (l != r)
+		tree[p].len2 = tree[pl(p)].len2 + tree[pr(p)].len2;//没有标记，就等于左右子树的和，被包括在上一个判断中
+	else
+		tree[p].len2 = 0;//考虑到标记减小的情况，没有被覆盖
+
+}
+void build(int p, int l, int r)
+{
+	tree[p] = { 0,0,0 };
+	if (l == r)
+		return;
+	int mid = l + r >> 1;
+	build(pl(p), l, mid);
+	build(pr(p), mid + 1, r);
+}
+void update(int p, int l, int r, int L, int R, int c)
+{
+	if (l >= L && r <= R)
+	{
+		tree[p].color += c;
+		pushup(p, l, r);//简写
+		return;
+	}
+	int mid = l + r >> 1;
+	if (L <= mid)
+		update(pl(p), l, mid, L, R, c);
+	if (R > mid)
+		update(pr(p), mid + 1, r, L, R, c);
+	pushup(p, l, r);
+}
+int main()
+{
+	int t;
+	scanf("%d", &t);
+	while (t--)
+	{
+		int n;
+		double x1, y1, x2, y2, ans = 0;
+		scanf("%d", &n);
+		v.clear();
+		line.clear();
+		v.push_back(-10000007);//第一个是没有用的，因为建树是从1开始的
+		for (int i = 0; i < n; i++)
+		{
+			scanf("%lf%lf%lf%lf", &x1, &y1, &x2, &y2);
+			line.push_back({ x1,y1,y2,1 });
+			line.push_back({ x2, y1, y2, -1 });
+			v.push_back(y1);
+			v.push_back(y2);
+		}
+		sort(v.begin(), v.end());
+		v.erase(unique(v.begin(), v.end()), v.end());
+		build(1, 1, v.size() - 2);//本身就多加入了一个点，还有要把点转换成区间1等于1~2，只要size-2个点就包含了所有区间
+		sort(line.begin(), line.end());
+		double pre = 0;
+		for (auto it : line)
+		{
+			ans += tree[1].len2 * (it.x - pre);//先加
+			pre = it.x;
+			update(1, 1, v.size() - 2, find(it.y1), find(it.y2) - 1, it.c);//后更新，先左下后右上
+		}
+		printf("%.2f\n", ans+0.001);//有时需要四舍五入
+	}
+
+	return 0;
+}
+```
+
+**区间gcd**(类似差分)求区间gcd的值,区间加
+
+```c++
+#include<iostream>
+using namespace std;
+#define ll long long
+const int N = 500005 + 5;
+ll a[N], d[N], tree[N << 2], tree1[N << 2], tag[N << 2];
+ll pl(ll p) { return p << 1; }
+ll pr(ll p) { return p << 1 | 1; }
+ll gcd(ll a, ll b)
+{
+	return b == 0 ? a : gcd(b, a % b);
+}
+void pushup(ll p)
+{
+	tree[p] = gcd(tree[pl(p)], tree[pr(p)]);
+}
+
+void push_down(ll  p, ll l, ll r)
+{
+	if (tag[p])
+	{
+		ll mid = l + r >> 1;
+		if (mid - l + 1 == 1)
+			tree1[pl(p)] += (mid - l + 1) * tag[p];
+		if (r - mid == 1)
+			tree1[pr(p)] += (r - mid) * tag[p];
+		tag[pl(p)] += tag[p];
+		tag[pr(p)] += tag[p];
+		tag[p] = 0;
+	}
+
+}
+void build(ll p, ll l, ll r)
+{
+	if (l == r)
+	{
+		tree[p] = d[l];
+		return;
+	}
+	ll mid = l + r >> 1;
+	build(pl(p), l, mid);
+	build(pr(p), mid + 1, r);
+	pushup(p);
+}
+void update(ll p, ll l, ll r, ll idx, ll x)
+{
+	if (l == r)
+	{
+		tree[p] += x;
+		return;
+	}
+	ll mid = l + r >> 1;
+	if (idx <= mid)
+		update(pl(p), l, mid, idx, x);
+	else
+		update(pr(p), mid + 1, r, idx, x);
+	pushup(p);
+}
+void build_1(ll p, ll l, ll r)
+{
+	if (l == r)
+	{
+		tree1[p] = a[l];
+		return;
+	}
+	ll mid = l + r >> 1;
+	build_1(pl(p), l, mid);
+	build_1(pr(p), mid + 1, r);
+}
+void update_1(ll p, ll l, ll r, ll L, ll R, ll x)
+{
+	if (l >= L && r <= R)
+	{
+		tag[p] += x;
+		tree1[p] += (r - l + 1) * x;
+		return;
+	}
+	push_down(p, l, r);
+	ll mid = l + r >> 1;
+	if (L <= mid)
+		update_1(pl(p), l, mid, L, R, x);
+	if (R > mid)
+		update_1(pr(p), mid + 1, r, L, R, x);
+}
+ll query_1(ll p, ll l, ll r, ll idx)
+{
+	if (l == r)
+	{
+		return tree1[p];
+	}
+	push_down(p, l, r);
+	ll mid = l + r >> 1;
+	if (idx <= mid)
+		return query_1(pl(p), l, mid, idx);
+	else
+		return query_1(pr(p), mid + 1, r, idx);
+}
+ll query(ll p, ll l, ll r, ll L, ll R)
+{
+	if (l >= L && r <= R)
+	{
+		return tree[p];
+	}
+	ll mid = l + r >> 1, ans = 0;
+	if (L <= mid)
+		ans = query(pl(p), l, mid, L, R);
+	if (R > mid)
+		ans = gcd(ans, query(pr(p), mid + 1, r, L, R));
+	return ans;
+}
+int main()
+{
+	ll n, m;
+	cin >> n >> m;
+	for (int i = 1; i <= n; i++)
+	{
+		scanf("%lld", &a[i]);
+		d[i] = a[i] - a[i - 1];
+	}
+	build(1, 1, n);
+	build_1(1, 1, n);
+	while (m--)
+	{
+		char flag;
+		ll l, r, x;
+
+		cin >> flag;
+		//cout << flag << endl;
+		if (flag == 'Q')
+		{
+			scanf("%lld%lld", &l, &r);
+			//cout << query(1, 1, n, l + 1, r) << endl;
+			if (l == r)
+			{
+				printf("%lld\n", abs(query_1(1, 1, n, l)));
+			}
+			else
+			{
+				printf("%lld\n", gcd(abs(query_1(1, 1, n, l)), abs(query(1, 1, n, l + 1, r))));
+			}
+		}
+		else
+		{
+			scanf("%lld%lld%lld", &l, &r, &x);
+			update_1(1, 1, n, l, r, x);
+			if (r == n)
+			{
+				update(1, 1, n, l, x);
+			}
+			else
+			{
+				update(1, 1, n, l, x);
+				update(1, 1, n, r + 1, -x);
+			}
+		}
+	}
+	return 0;
+}
+```
+
+**dfs序，在树上使用线段树**
+
+```c++
+//hdu3974
+//现有一棵树，有以下操作：
+//1. 节点x及其所有子孙颜色都变更为k。
+//2. 要求你回答节点x的颜色。
+//初始所有点都没有染色。
+#include<iostream>
+#include<vector>
+using namespace std;
+vector<int>v[50005];
+int pl(int p) { return p << 1; }
+int pr(int p) { return p << 1 | 1; }
+struct node
+{
+	int color, tag;
+}tree[50005 << 2];
+int cnt = 0, be[50005], ed[50005], du[50005];
+void dfs(int p)
+{
+	//cout << p << endl;
+	be[p] = ++cnt;//必须前加ed[p]要与最后一个cnt相等，而不是cnt+1;
+	for (auto it : v[p])
+	{
+		dfs(it);
+	}
+	ed[p] = cnt;
+}
+void build(int p, int l, int r)
+{
+	tree[p] = { -1,0 };
+	if (l == r)
+		return;
+	int mid = l + r >> 1;
+	build(pl(p), l, mid);
+	build(pr(p), mid + 1, r);
+}
+void add_tag(int p, int d)
+{
+	tree[p].color = d;
+	tree[p].tag = 1;
+}
+void push_down(int p)
+{
+	if (tree[p].tag)
+	{
+		add_tag(pl(p), tree[p].color);
+		add_tag(pr(p), tree[p].color);
+		tree[p].tag = 0;
+	}
+}
+void update(int p, int l, int r, int L, int R, int c)
+{
+	if (l >= L && r <= R)
+	{
+		tree[p] = { c,1 };
+		return;
+	}
+	int mid = l + r >> 1;
+	push_down(p);
+	if (L <= mid)
+		update(pl(p), l, mid, L, R, c);
+	if (R > mid)
+		update(pr(p), mid + 1, r, L, R, c);
+}
+int query(int p, int l, int r, int idx)
+{
+	if (l == r)
+	{
+		return tree[p].color;
+	}
+	int mid = l + r >> 1;
+	push_down(p);
+	if (idx <= mid)
+		return query(pl(p), l, mid, idx);
+	else
+		return query(pr(p), mid + 1, r, idx);
+}
+
+int main()
+{
+	int t, k = 1;
+	cin >> t;
+	while (t--)
+	{
+		cnt = 0;
+		int n;
+		cin >> n;
+		for (int i = 0; i <= n; i++)
+		{
+			v[i].clear();
+			du[i] = 0;
+		}
+		for (int i = 1; i < n; i++)
+		{
+			int a, b;
+			cin >> a >> b;
+			v[b].push_back(a);
+			du[a]++;
+		}
+		for (int i = 1; i <= n; i++)
+		{
+			if (du[i] == 0)
+			{
+				//	cout << i << "www" << endl;
+				dfs(i);
+			}
+		}
+		build(1, 1, n);
+		cout << "Case #" << k << ":" << endl;
+		k++;
+		int q;
+		cin >> q;
+		while (q--)
+		{
+			char flag;
+			int x, c;
+			cin >> flag;
+			if (flag == 'T')
+			{
+				cin >> x >> c;
+				//		cout << "aa" << be[x] << ' ' << ed[x] << endl;
+				update(1, 1, n, be[x], ed[x], c);
+			}
+			else
+			{
+				cin >> x;
+				cout << query(1, 1, n, be[x]) << endl;
+			}
+		}
+	}
+	return 0;
+}
+```
+
+**树套树（二维线段树）**
+
+```c++
+//hud1823
+#include<bits/stdc++.h>
+using namespace std;
+int ls(int p) { return p << 1; }
+int rs(int p) { return p << 1 | 1; }
+int n = 1000, s[1005][4005];//扩大10倍计算没有小数点,i为身高区间，j为活泼区间，s[i][j]表示缘分最大值
+void subBuild(int xp, int p, int pl, int pr)//第二维活泼线段树
+{
+	s[xp][p] = -1;
+	if (pl == pr)return;
+	int mid = (pl + pr) >> 1;
+	subBuild(xp, ls(p), pl, mid);
+	subBuild(xp, rs(p), mid + 1, pr);
+}
+void build(int p, int pl, int pr)
+{
+	subBuild(p, 1, 0, n);
+	if (pl == pr)return;
+	int mid = (pl + pr) >> 1;
+	build(ls(p), pl, mid);
+	build(rs(p), mid + 1, pr);
+}
+void subUpdate(int xp, int y, int c, int p, int pl, int pr)
+{
+	if (pl == pr && pl == y)s[xp][p] = max(s[xp][p], c);
+	else
+	{
+		int mid = (pl + pr) >> 1;
+		if (y <= mid)subUpdate(xp, y, c, ls(p), pl, mid);//y是活泼度
+		else subUpdate(xp, y, c, rs(p), mid + 1, pr);
+		s[xp][p] = max(s[xp][ls(p)], s[xp][rs(p)]);//相当于push_up
+	}
+}
+void update(int x, int y, int c, int p, int pl, int pr)
+{
+	subUpdate(p, y, c, 1, 0, n);
+	if (pl != pr)
+	{
+		int mid = (pl + pr) >> 1;
+		if (x <= mid)update(x, y, c, ls(p), pl, mid);//x是身高
+		else update(x, y, c, rs(p), mid + 1, pr);
+	}
+}
+int subQuery(int xp, int yl, int yr, int p, int pl, int pr)//普通查询
+{
+	if (yl <= pl && yr >= pr)return s[xp][p];
+	else
+	{
+		int mid = (pl + pr) >> 1;
+		int res = -1;
+		if (yl <= mid)res = subQuery(xp, yl, yr, ls(p), pl, mid);
+		if (yr > mid)res = max(res, subQuery(xp, yl, yr, rs(p), mid + 1, pr));
+		return res;
+	}
+}
+int query(int xl, int xr, int yl, int yr, int p, int pl, int pr)//普通查询
+{
+	if (xl <= pl && xr >= pr)return subQuery(p, yl, yr, 1, 0, n);
+	else
+	{
+		int mid = (pl + pr) >> 1;
+		int res = -1;
+		if (xl <= mid)res = query(xl, xr, yl, yr, ls(p), pl, mid);
+		if (xr > mid)res = max(res, query(xl, xr, yl, yr, rs(p), mid + 1, pr));
+		return res;
+	}
+}
+int main()
+{
+	int t;
+	while (scanf("%d", &t) && t)
+	{
+		build(1, 100, 200);
+		while (t--)
+		{
+			char ch[2];
+			scanf("%s", ch);
+			if (ch[0] == 'I')
+			{
+				int h;
+				double c, d;
+				scanf("%d%lf%lf", &h, &c, &d);
+				update(h, c * 10, d * 10, 1, 100, 200);
+			}
+			else
+			{
+				int xl, xr, yl, yr;
+				double c, d;
+				scanf("%d%d%lf%lf", &xl, &xr, &c, &d);
+				yl = c * 10, yr = d * 10;
+				if (xl > xr)swap(xl, xr);
+				if (yl > yr)swap(yl, yr);
+				double ans = query(xl, xr, yl, yr, 1, 100, 200);
+				if (ans == -1)printf("-1\n");
+				else printf("%.1lf\n", ans / 10.0);//保留一位小数
+			}
+		}
+	}
+
+
+	return 0;
+}
+```
+
+**可持久化线段树（主席树）区间第k大问题**
+
+```c++
+//洛谷P3834
+//#pragma GCC optimize(2)
+#include<bits/stdc++.h>
+using namespace std;
+const int N = 2e5 + 5;
+int cnt = 0;//用cnt标记可以使用的新节点
+int a[N], b[N], root[N];//a[]为原数组，b[]为排序后数组，root[i]记录第i颗线段树的节点编号
+struct {
+	int L, R, sum;
+}tree[N << 5];//<<4是乘以16不够，<<5够用
+int build(int pl, int pr)
+{
+	int rt = ++cnt;//cnt为当前节点编号
+	tree[rt].sum = 0;
+	int mid = (pl + pr) >> 1;
+	if (pl < pr)
+	{
+		tree[rt].L = build(pl, mid);
+		tree[rt].R = build(mid + 1, pr);
+	}
+	return rt;//返回当前节点编号
+}
+int update(int pre, int pl, int pr, int x)//建一棵只有log2n个节点的新线段树
+{
+	int rt = ++cnt;
+	tree[rt].L = tree[pre].L;
+	tree[rt].R = tree[pre].R;
+	tree[rt].sum = tree[pre].sum + 1;//插入一个数
+	int mid = (pl + pr) >> 1;
+	if (pl < pr)
+	{
+		if (x <= mid)
+			tree[rt].L = update(tree[pre].L, pl, mid, x);
+		else
+			tree[rt].R = update(tree[pre].R, mid + 1, pr, x);
+	}
+	return rt;
+}
+int query(int u, int v, int pl, int pr, int k)//查询u~v的中的第k小数
+{
+	if (pl == pr)return pl;//找到第k小数，答案是b[pl]
+	int x = tree[tree[v].L].sum - tree[tree[u].L].sum;//线段树相减，只用算左子树
+	int mid = (pl + pr) >> 1;
+	if (x >= k)
+		return query(tree[u].L, tree[v].L, pl, mid, k);//说明第k小数在左子树
+	else
+		return query(tree[u].R, tree[v].R, mid + 1, pr, k - x);//否则，在右子树找第k-x小数
+}
+int main()
+{
+	int n, m;
+	scanf("%d%d", &n, &m);
+	for (int i = 1; i <= n; i++)
+	{
+		scanf("%d", &a[i]);
+		b[i] = a[i];
+	}
+	sort(b + 1, b + n + 1);
+	int size = unique(b + 1, b + n + 1) - b - 1;//去重后计数
+	//root[0]=build(1,size);//初始化一颗包含size个元素的空树，实际上无必要
+	for (int i = 1; i <= n; i++)//建n棵线段树
+	{
+		int x = lower_bound(b + 1, b + 1 + size, a[i]) - b;
+		root[i] = update(root[i - 1], 1, size, x);//root[i]为第i棵线段树的根节点
+	}
+	while (m--)
+	{
+		int x, y, k;
+		scanf("%d%d%d", &x, &y, &k);
+		int t = query(root[x - 1], root[y], 1, size, k);//第y棵线段树减去第x-1棵线段树，就是区间[x,y]的线段树
+		printf("%d\n", b[t]);
+	}
+	return 0;
+}
+
+```
+
+**求区间比k小的数的数量**
+
+```c++
+//hdu4417
+#include<bits/stdc++.h>
+using namespace std;
+const int N = 1e5 + 5;
+struct point
+{
+	int rt, sum, ls, rs;
+}e[N * 20];
+int a[N], b[N], tot, n, m, sz, x, y;
+void build(int& rt, int pl, int pr)
+{
+	tot++;
+	rt = tot;
+	e[rt].sum = 0;
+	if (pl == pr)return;
+	int mid = (pl + pr) >> 1;
+	build(e[rt].ls, pl, mid);
+	build(e[rt].rs, mid + 1, pr);
+}
+void update(int& rt, int l, int r, int last, int p)
+{
+	rt = ++tot;
+	e[rt].ls = e[last].ls;
+	e[rt].rs = e[last].rs;
+	e[rt].sum = e[last].sum + 1;
+	if (l == r)return;
+	int mid = (l + r) >> 1;
+	if (p <= mid)update(e[rt].ls, l, mid, e[last].ls, p);
+	else update(e[rt].rs, mid + 1, r, e[last].rs, p);
+}
+
+int query(int L, int R, int l, int r)
+{
+	if (x > y)return 0;
+	if (x <= l && y >= r)return e[R].sum - e[L].sum;
+	int mid = (r + l) >> 1;
+	int res = 0;
+	if (x <= mid)res += query(e[L].ls, e[R].ls, l, mid);//[x~y)包括所有比k小的数，因为离散化
+	if (y > mid)res += query(e[L].rs, e[R].rs, mid + 1, r);
+	return res;
+}
+
+void find()
+{
+	int L, R, k;
+	scanf("%d%d%d", &L, &R, &k);
+	L++, R++;
+	x = 1; y = upper_bound(b + 1, b + 1 + sz, k) - (b + 1);
+	int ans = query(e[L - 1].rt, e[R].rt, 1, sz);
+	printf("%d\n", ans);
+}
+
+int main()
+{
+	int t, s = 1;
+	scanf("%d", &t);
+	while (t--)
+	{
+		tot = 0;
+		scanf("%d%d", &n, &m);
+		for (int i = 1; i <= n; i++)
+		{
+			scanf("%d", &a[i]);
+			b[i] = a[i];
+		}
+		sort(b + 1, b + 1 + n);
+		sz = unique(b + 1, b + 1 + n) - (b + 1);
+		build(e[0].rt, 1, sz);
+		for (int i = 1; i <= n; i++)a[i] = lower_bound(b + 1, b + 1 + sz, a[i]) - b;
+		for (int i = 1; i <= n; i++)update(e[i].rt, 1, sz, e[i - 1].rt, a[i]);//完美二叉查找树，节点就是值，可直接比较
+		printf("Case %d:\n", s); s++;
+		while (m--)
+			find();
+	}
+	return 0;
+}
+
+```
+
+**树的重心**
+
+```c++
+//poj 3107
+#include<iostream>
+#include<algorithm>
+using namespace std;
+const int N = 5e4 + 5;
+struct Edge
+{
+	int to, next;
+}edge[N << 1];
+int head[N], cnt = 0;
+int n;
+int d[N], ans[N], num = 0, maxnum = 1e9;
+void init(int n)
+{
+	for (int i = 0; i <= n; i++)
+	{
+		edge[i].next = -1;
+        edge[i+n].next=-1;
+		head[i] = -1;
+        d[i]=0;
+        ans[i]=0;
+	}
+    num=0;
+    maxnum=1e9;
+	cnt = 0;
+}
+void addedge(int u, int v)
+{
+	edge[cnt].to = v;
+	edge[cnt].next = head[u];
+	head[u] = cnt++;
+}
+
+void dfs(int u, int fa)
+{
+	d[u] = 1;
+	int tmp = 0;
+	for (int i = head[u]; ~i; i = edge[i].next)//所有子树
+	{
+		int v = edge[i].to;
+		if (v == fa)continue;
+		dfs(v, u);
+		d[u] += d[v];
+		tmp = max(tmp, d[v]);
+	}
+	tmp = max(tmp, n - d[u]);//最大子树
+
+	if (tmp < maxnum)//最大子树最小
+	{
+		maxnum = tmp;
+		num = 0;
+		ans[++num] = u;
+	}
+	else if (tmp == maxnum)ans[++num] = u;
+
+}
+int main()
+{
+	scanf("%d", &n);
+	init(n);//可以根据n的大小来初始化，t组数据会超时
+	for (int i = 1; i < n; i++)
+	{
+		int u, v;
+		scanf("%d%d", &u, &v);
+		addedge(u, v);
+		addedge(v, u);
+	}
+	dfs(1, 0);
+	sort(ans + 1, ans + num + 1);
+	for (int i = 1; i <= num; i++)
+		printf("%d ", ans[i]);
+
+	return 0;
+}
+```
+
+**树的直径**(树形dp)
+
+```c++
+#include<bits/stdc++.h>
+using namespace std;
+const int N = 1e5 + 5;
+struct edge {
+	int to, w;
+};
+vector<edge>e[N];
+int dp[N];
+int maxlen = 0;//答案
+bool vis[N];
+void dfs(int u)
+{
+	vis[u] = true;
+	for (int i = 0; i < e[u].size(); i++)
+	{
+		int v = e[u][i].to, edge = e[u][i].w;
+		if (vis[v])continue;
+		dfs(v);
+		maxlen = max(maxlen, dp[u]+dp[v] + edge);//此时dp[u]不包括dp[v]，所以可以直接计算
+		dp[u] = max(dp[u], dp[v] + edge);//计算包含dp[v]的情况
+	}
+	return;
+}
+int main()
+{
+	int n;
+	cin >> n;
+	for (int i = 0; i < n-1; i++)
+	{
+		int a, b, w;
+		cin >> a >> b >> w;
+		e[a].push_back({b,w});
+		e[b].push_back({ a,w });
+	}
+	dfs(1);
+	cout << maxlen << endl;
+	return 0;
+}
+```
+
+**最近公共祖先LCA**
+
+```c++
+//洛谷P3379倍增法查询一次log2n
+#include<bits/stdc++.h>
+using namespace std;
+const int N = 500005;
+struct Edge
+{
+	int to, next;
+}edge[2 * N];
+int head[2 * N], cnt;
+void init()
+{
+	for (int i = 0; i < 2 * N; i++)
+	{
+		edge[i].next = -1;
+		head[i] = -1;
+	}
+	cnt = 0;
+}
+void addedge(int u, int v)
+{
+	edge[cnt].to = v;
+	edge[cnt].next = head[u];
+	head[u] = cnt++;
+}
+int fa[N][20], deep[N];
+void dfs(int x, int father)
+{
+	deep[x] = deep[father] + 1;
+	fa[x][0] = father;
+	for (int i = 1; (1 << i) <= deep[x]; i++)
+	{
+		fa[x][i] = fa[fa[x][i - 1]][i - 1];
+	}
+	for (int i = head[x]; ~i; i = edge[i].next)
+	{
+		if (edge[i].to != father)
+		{
+			dfs(edge[i].to, x);
+		}
+	}
+}
+int LCA(int x, int y)
+{
+	if (deep[x] < deep[y])swap(x, y);
+	for (int i = 19; i >= 0; i--)
+	{
+		if (deep[x] - (1 << i) >= deep[y])
+		{
+			x = fa[x][i];
+		}
+	}
+	if (x == y)
+		return x;
+	for (int i = 19; i >= 0; i--)
+	{
+		if (fa[x][i] != fa[y][i])
+		{
+			x = fa[x][i];
+			y = fa[y][i];
+		}
+	}
+	return fa[x][0];
+}
+int main()
+{
+	init();
+	int n, m, root;
+	scanf("%d%d%d", &n, &m, &root);//节点个数，询问个数，根节点序号
+	for (int i = 1; i < n; i++)
+	{
+		int u, v;
+		scanf("%d%d", &u, &v);
+		addedge(u, v);
+		addedge(v, u);
+	}
+	dfs(root, 0);
+	while (m--)
+	{
+		int a, b;
+		scanf("%d%d", &a, &b);
+		printf("%d\n", LCA(a, b));
+	}
+
+}
+```
+
+Tarjan算法求LCA（离线算法）
+
+```c++
+//洛谷P3379
+#include<bits/stdc++.h>
+using namespace std;
+const int N = 5e5 + 5;
+int fa[N], head[N], cnt, head_query[N], cnt_query, ans[N];
+bool vis[N];
+struct Edge
+{
+	int to, next, num;
+}edge[N << 1], query[N << 1];
+void init()
+{
+	cnt = 1, cnt_query = 1;
+	memset(vis, 0, sizeof(vis));
+}
+void addedge(int u, int v)
+{
+	edge[++cnt].to = v;
+	edge[cnt].next = head[u];
+	head[u] = cnt;
+}
+void add_query(int x, int y, int num)
+{
+	query[++cnt_query].to = y;
+	query[cnt_query].num = num;
+	query[cnt_query].next = head_query[x];
+	head_query[x] = cnt_query;
+}
+int find_set(int x)
+{
+	return fa[x] == x ? x : fa[x]=find_set(fa[x]);//fa[x]=find_set(fa[x]);这样写可大大加快运行速度
+}
+void tarjan(int x)
+{
+	vis[x] = true;
+	for (int i = head[x]; i; i = edge[i].next)
+	{
+		int y = edge[i].to;
+		if (!vis[y])
+		{
+			tarjan(y);
+			fa[y] = x;
+		}
+	}
+	for (int i = head_query[x]; i; i = query[i].next)
+	{
+		int y = query[i].to;
+		if (vis[y])
+		{
+			ans[query[i].num] = find_set(y);
+		}
+	}
+}
+int main()
+{
+	init();
+	int n, m, root;
+	scanf("%d%d%d", &n, &m, &root);
+	for (int i = 1; i < n; i++)
+	{
+		fa[i] = i;
+		int u, v;
+		scanf("%d%d", &u, &v);
+		addedge(u, v);
+		addedge(v, u);
+	}
+	fa[n] = n;
+	for (int i = 1; i <= m; i++)
+	{
+		int a, b;
+		scanf("%d%d", &a, &b);
+		add_query(a, b, i);
+		add_query(b, a, i);
+	}
+	tarjan(root);
+	for (int i = 1; i <= m; i++)
+	{
+		printf("%d\n", ans[i]);
+	}
+}
+```
+
+树上差分
+
+```c++
+//洛谷P3128
+#include<bits/stdc++.h>
+using namespace std;
+const int N = 5e5 + 5;
+struct Edge
+{
+	int to, next;
+}edge[2 * N];
+int head[2 * N], D[N], cnt, ans, fa[N][20], deep[N];
+void init()//用倍增法模板
+{
+	for (int i = 0; i < 2 * N; i++)
+	{
+		edge[i].next = -1;
+		head[i] = -1;
+	}
+	cnt = 0;
+}
+void addedge(int u, int v)
+{
+	edge[cnt].to = v;
+	edge[cnt].next = head[u];
+	head[u] = cnt++;
+}
+
+void dfs1(int x, int father)
+{
+	deep[x] = deep[father] + 1;
+	fa[x][0] = father;
+	for (int i = 1; (1 << i) <= deep[x]; i++)
+	{
+		fa[x][i] = fa[fa[x][i - 1]][i - 1];
+	}
+	for (int i = head[x]; ~i; i = edge[i].next)
+	{
+		if (edge[i].to != father)
+		{
+			dfs1(edge[i].to, x);
+		}
+	}
+}
+int LCA(int x, int y)
+{
+	if (deep[x] < deep[y])swap(x, y);
+	for (int i = 19; i >= 0; i--)
+	{
+		if (deep[x] - (1 << i) >= deep[y])
+		{
+			x = fa[x][i];
+		}
+	}
+	if (x == y)
+		return x;
+	for (int i = 19; i >= 0; i--)
+	{
+		if (fa[x][i] != fa[y][i])
+		{
+			x = fa[x][i];
+			y = fa[y][i];
+		}
+	}
+	return fa[x][0];
+}
+void dfs2(int u, int fath)
+{
+	for (int i = head[u]; ~i; i = edge[i].next)
+	{
+		int e = edge[i].to;
+		if (e == fath)continue;
+		dfs2(e, u);
+		D[u] += D[e];
+	}
+	ans = max(ans, D[u]);
+}
+
+int main()
+{
+	init();
+	int n, m;
+	scanf("%d%d", &n, &m);
+	for (int i = 1; i < n; i++)
+	{
+		int u, v;
+		scanf("%d%d", &u, &v);
+		addedge(u, v);
+		addedge(v, u);
+	}
+	dfs1(1, 0);//计算每个节点的深度并预处理fa[][]数组
+	for (int i = 1; i <= m; i++)
+	{
+		int a, b;
+		scanf("%d%d", &a, &b);
+		int lca = LCA(a, b);
+		D[a]++;
+		D[b]++;
+		D[lca]--;
+		D[fa[lca][0]]--;
+	}
+	dfs2(1, 0);//用差分数组求每个节点的权值
+	printf("%d\n", ans);
+	return 0;
+}
+```
+
+**快速读写版本，如果数据输入输出是1e6的话很有必要，可节省一半以上的时间，区间最值修改,比如a[i]=min(a[i],x)，区间求和，区间最值查询****
+
+```c++
+//记得ctrl+z结束输入
+#include<iostream>
+#include<string>
+using namespace std;
+#define ll long long
+const int N = 1e6 + 5;
+ll sum[N << 2], ma[N << 2], se[N << 2], num[N << 2];
+int n, m, t, kase = 1;
+const int MAX = 10000;
+char buf[MAX], * ps = buf, * pe = buf + 1;
+
+inline void rnext() {
+	if (++ps == pe) pe = (ps = buf) + fread(buf, sizeof(char), sizeof(buf) / sizeof(char), stdin);
+}
+template <class T>
+inline bool in(T& ans) {
+	ans = 0;
+	//	cout << "aa";
+	T f = 1;
+	if (ps == pe) return false;//EOF
+	do {
+		rnext();
+		if ('-' == *ps) f = -1;
+	} while (!isdigit(*ps) && ps != pe);
+	if (ps == pe) return false;//EOF
+	do {
+		ans = (ans << 1) + (ans << 3) + *ps - 48;
+		rnext();
+	} while (isdigit(*ps) && ps != pe);
+	ans *= f;
+	return true;
+}
+char bufout[MAX], outtmp[50], * pout = bufout, * pend = bufout + MAX;
+inline void write() {
+	fwrite(bufout, sizeof(char), pout - bufout, stdout);
+	pout = bufout;
+}
+inline void out_char(char c) { *(pout++) = c; if (pout == pend) write(); }
+inline void out_str(char* s) {
+	while (*s) {
+		*(pout++) = *(s++);
+		if (pout == pend) write();
+	}
+}
+template <class T>
+inline void out_int(T x) {
+	if (!x) {
+		out_char('0');
+		return;
+	}
+	if (x < 0) x = -x, out_char('-');
+	int len = 0;
+	while (x) {
+		outtmp[len++] = x % 10 + 48;
+		x /= 10;
+	}
+	outtmp[len] = 0;
+	for (int i = 0, j = len - 1; i < j; i++, j--) swap(outtmp[i], outtmp[j]);
+	out_str(outtmp);
+}
+int ls(int p) { return p << 1; }
+int rs(int p) { return p << 1 | 1; }
+void push_up(int p)
+{
+	sum[p] = sum[ls(p)] + sum[rs(p)];
+	ma[p] = ma[ls(p)] > ma[rs(p)] ? ma[ls(p)] : ma[rs(p)];
+	if (ma[ls(p)] == ma[rs(p)])
+	{
+		se[p] = se[ls(p)] > se[rs(p)] ? se[ls(p)] : se[rs(p)];
+		num[p] = num[ls(p)] + num[rs(p)];
+	}
+	else
+	{
+		se[p] = se[ls(p)] > se[rs(p)] ? se[ls(p)] : se[rs(p)];
+		se[p] = max(se[p], min(ma[ls(p)], ma[rs(p)]));
+		num[p] = ma[ls(p)] > ma[rs(p)] ? num[ls(p)] : num[rs(p)];
+	}
+}
+void build(int p, int pl, int pr)
+{
+	if (pl == pr)
+	{
+		in(sum[p]);
+		ma[p] = sum[p];
+		se[p] = -1;
+		num[p] = 1;
+		return;
+	}
+	ll mid = (pl + pr) >> 1;
+	build(ls(p), pl, mid);
+	build(rs(p), mid + 1, pr);
+	push_up(p);
+}
+inline void addtag(int p, int x)
+{
+	if (x >= ma[p])return;
+	sum[p] -= num[p] * (ma[p] - x);
+	ma[p] = x;
+}
+void update(int L, int R, int p, int pl, int pr, int x)
+{
+	if (x >= ma[p])return;
+	if (L <= pl && R >= pr && se[p] < x)
+	{
+		addtag(p, x);
+		return;
+	}
+	addtag(ls(p), ma[p]);
+	addtag(rs(p), ma[p]);
+	ll mid = (pl + pr) >> 1;
+	if (L <= mid)update(L, R, ls(p), pl, mid, x);
+	if (R > mid)update(L, R, rs(p), mid + 1, pr, x);
+	push_up(p);
+}
+int query_max(int L, int R, int p, int pl, int pr)
+{
+	if (L <= pl && R >= pr)
+	{
+		return ma[p];
+	}
+	addtag(ls(p), ma[p]);
+	addtag(rs(p), ma[p]);
+	ll mid = (pl + pr) >> 1;
+	int res = 0;
+	if (L <= mid)res = query_max(L, R, ls(p), pl, mid);
+	if (R > mid)res = max(res, query_max(L, R, rs(p), mid + 1, pr));
+	return res;
+}
+ll query_sum(ll L, ll R, ll p, ll pl, ll pr)
+{
+	if (L <= pl && R >= pr)
+	{
+		return sum[p];
+	}
+	addtag(ls(p), ma[p]);
+	addtag(rs(p), ma[p]);
+	ll mid = (pl + pr) >> 1, res = 0;
+	if (L <= mid)res += query_sum(L, R, ls(p), pl, mid);
+	if (R > mid)res += query_sum(L, R, rs(p), mid + 1, pr);
+	return res;
+}
+int main()
+{
+
+	in(t);
+	while (t--)
+	{
+		//cout << "aa";
+		in(n); in(m);
+		build(1, 1, n);
+		while (m--)
+		{
+			int q, L, R, x;
+			//  scanf("%d%d%d", &q, &L, &R);
+			in(q); in(L); in(R);
+			if (q == 0) { in(x); update(L, R, 1, 1, n, x); }
+			if (q == 1) { int ans = query_max(L, R, 1, 1, n); out_int(ans); out_char('\n'); }
+			if (q == 2) { ll ans = query_sum(L, R, 1, 1, n); out_int(ans); out_char('\n'); }
+
+		}
+	}
+	write();
+	return 0;
+}
+```
+
+**区间修改，区间最值修改min(a[i],x),区间求和，区间最值查询(max),历史区间最值查询(maxb)**
+
+```c++
+//洛谷P6242
+#include<bits/stdc++.h>
+using namespace std;
+#define ll long long
+const int N = 5e5 + 5;
+ll sum[N << 2], ma[N << 2], se[N << 2], mas[N << 2], num[N << 2], a[N], la[N << 2];
+ll add1[N << 2], add2[N << 2], add3[N << 2], add4[N << 2];
+void push_up(int p)
+{
+	mas[p] = max(mas[p << 1], mas[p << 1 | 1]);
+	ma[p] = max(ma[p << 1], ma[p << 1 | 1]);
+	sum[p] = sum[p << 1] + sum[p << 1 | 1];
+	if (ma[p << 1] == ma[p << 1 | 1])
+	{
+		se[p] = max(se[p << 1], se[p << 1 | 1]);
+		num[p] = num[p << 1] + num[p << 1 | 1];
+	}
+	else
+	{
+		se[p] = max(se[p << 1], se[p << 1 | 1]);
+		se[p] = max(se[p], min(ma[p << 1], ma[p << 1 | 1]));
+		num[p] = ma[p << 1] > ma[p << 1 | 1] ? num[p << 1] : num[p << 1 | 1];
+	}
+}
+void build(int p, int pl, int pr)
+{
+	if (pl == pr)
+	{
+		scanf("%lld", &sum[p]);
+		ma[p] = sum[p];
+		se[p] = -2e9;
+		mas[p] = sum[p];
+		num[p] = 1;
+		return;
+	}
+	ll mid = (pl + pr) >> 1;
+	build(p << 1, pl, mid);
+	build(p << 1 | 1, mid + 1, pr);
+	push_up(p);
+}
+inline void change(int k1, int k2, int k3, int k4, int p, int len)
+{
+	sum[p] += 1ll*num[p] * k1 + 1ll*(len - num[p]) * k2;
+	mas[p] = max(mas[p], ma[p] + k3);
+	ma[p] += k1;
+	if (se[p] != -2e9)se[p] += k2;
+	add3[p] = max(add3[p], add1[p] + k3);
+	add4[p] = max(add4[p], add2[p] + k4);
+	add1[p] += k1;
+	add2[p] += k2;
+}
+
+inline void push_down(int p, int len)
+{
+	int maxn = max(ma[p << 1], ma[p << 1 | 1]);
+	if (maxn == ma[p << 1])
+		change(add1[p], add2[p], add3[p], add4[p], p << 1, (len + 1) >> 1);
+	else
+		change(add2[p], add2[p], add4[p], add4[p], p << 1, (len + 1) >> 1);
+	if (ma[p << 1 | 1] == maxn)
+		change(add1[p], add2[p], add3[p], add4[p], p << 1 | 1, len >> 1);
+	else
+		change(add2[p], add2[p], add4[p], add4[p], p << 1 | 1, len >> 1);
+	add1[p] = add2[p] = add3[p] = add4[p] = 0;
+}
+
+void update2(int p, int pl, int pr, int L, int R, int x)
+{
+
+	if (L > pr || R < pl || ma[p] <= x)return;
+	if (L <= pl && R >= pr && se[p] < x)
+	{
+		int k = ma[p] - x;
+		sum[p] -= 1ll*k * num[p];
+		ma[p] = x;
+		add1[p] -= k;
+		return;
+	}
+	push_down(p, pr - pl + 1);
+	ll mid = (pl + pr) >> 1;
+	update2(p << 1, pl, mid, L, R, x);
+	update2(p << 1 | 1, mid + 1, pr, L, R, x);
+	push_up(p);
+}
+
+void update1(int p, int pl, int pr, int L, int R, int d)
+{
+	if (L > pr || R < pl)return;
+	if (L <= pl && R >= pr)
+	{
+		sum[p] += 1ll*d * (pr - pl + 1);//更新值
+		ma[p] += d;
+		mas[p] = max(mas[p], ma[p]);
+		if (se[p] != -2e9)se[p] += d;
+		add1[p] += d, add2[p] += d;
+		add3[p] = max(add3[p], add1[p]);
+		add4[p] = max(add4[p], add2[p]);
+		return;
+	}
+	push_down(p, pr - pl + 1);
+	ll mid = (pl + pr) >> 1;
+	update1(p << 1, pl, mid, L, R, d);
+	update1(p << 1 | 1, mid + 1, pr, L, R, d);
+	push_up(p);
+}
+
+ll query_sum(ll p, ll pl, ll pr, ll L, ll R)
+{
+	if (L > pr || R < pl)return 0;
+	if (L <= pl && R >= pr)
+	{
+		return sum[p];
+	}
+	push_down(p, pr - pl + 1);
+	ll mid = (pl + pr) >> 1;
+	return query_sum(p << 1, pl, mid, L, R) + query_sum(p << 1 | 1, mid + 1, pr, L, R);
+}
+
+ll query_ma(ll p, ll pl, ll pr, ll L, ll R)
+{
+	if (L > pr || R < pl)return -2e9;
+	if (L <= pl && R >= pr)
+	{
+		return ma[p];
+	}
+	//push_down1(p, pl, pr);
+	push_down(p, pr - pl + 1);
+	ll mid = (pl + pr) >> 1, res = -2e9;
+	return max(query_ma(p << 1, pl, mid, L, R), query_ma(p << 1 | 1, mid + 1, pr, L, R));
+}
+
+ll query_mas(ll p, ll pl, ll pr, ll L, ll R)
+{
+	if (L <= pl && R >= pr)
+	{
+		return mas[p];
+	}
+	//push_down1(p, pl, pr);
+	push_down(p, pr - pl + 1);
+	ll mid = (pl + pr) >> 1, res = -2e9;
+	if (L <= mid)res = query_mas(p << 1, pl, mid, L, R);
+	if (R > mid)res = max(res, query_mas(p << 1 | 1, mid + 1, pr, L, R));
+	return res;
+}
+int main()
+{
+	int n, m;
+	cin >> n >> m;
+	build(1, 1, n);
+	//cout << sum[1] << sum[2] << endl;
+	while (m--)
+	{
+
+		int f, l, r, k;
+		cin >> f >> l >> r;
+		if (f == 1)
+		{
+			cin >> k;
+			update1(1, 1, n, l, r, k);
+		}
+		if (f == 2)
+		{
+			cin >> k;
+			update2(1, 1, n, l, r, k);
+		}
+		if (f == 3)
+		{
+			cout << query_sum(1, 1, n, l, r) << endl;
+		}
+		if (f == 4)
+		{
+			cout << query_ma(1, 1, n, l, r) << endl;
+		}
+		if (f == 5)
+		{
+			cout << query_mas(1, 1, n, l, r) << endl;
+		}
+	}
+
+	return 0;
+}
+```
+
+**快速读写**
+
+```c++
+#include<bits/stdc++.h>
+#define ll long long
+char buf[1 << 21], * p1 = buf, * p2 = buf, obuf[1 << 21], * o = obuf;
+#define g()(p1==p2&&(p2=(p1=buf)+fread(buf,1,1<<21,stdin),p1==p2)?EOF:*p1++)
+inline int read()
+{
+    int s = 0, f = 1; char c = g();
+    for (; !isdigit(c); c = g())
+        if (c == '-')f = -1;
+    for (; isdigit(c); c = g())
+        s = s * 10 + c - '0';
+    return s * f;
+}
+inline void write(ll x)
+{
+    static char buf[20];
+    static int len = -1;
+    if (x < 0)putchar('-'), x = -x;
+    do buf[++len] = x % 10, x /= 10; while (x);
+    while (len >= 0)putchar(buf[len--] + '0');
+    putchar('\n');
+}
+int n, m, op, l, r, k, v;
+int main()
+{
+	n = read(), m = read();
+	//build(1, n, 1);
+	while (m--)
+	{
+		op = read(), l = read(), r = read();
+		//if (op == 1)k = read(), update_add(1);
+		//else if (op == 2)v = read(), update_min(1);
+		//else if (op == 3)write(query_sum(1));
+		//else if (op == 4)printf("%d\n", query_maxa(1));
+		//else printf("%d\n", query_maxb(1));
+	}
+	return 0;
+}
+```
+
+**数据构造**
+
+```c++
+#include<iostream>
+#include<time.h>
+#include<stdlib.h>
+using namespace std;
+int main()
+{
+	srand(time(nullptr));
+	int t = 100;
+	while (t--)
+	{
+		int n = rand() % 10 + 1;//产生一个随机数
+		cout << n << endl;
+		for (int i = 0; i < n; i++)
+		{
+			cout << rand() % 1000 << ' ';
+		}
+		cout << endl;
+		for (int i = 0; i < n; i++)
+		{
+			cout << rand() % 2 << ' ';
+		}
+		cout << endl;
+	}
+
+	return 0;
+}
+```
+
