@@ -1,0 +1,817 @@
+负数取余就等于（负数%mod+mod）%mod即可
+
+树状数组由add(x,v)和ask(l,r),lowbit(x)组成
+区间修改
+inline void add(int l, int v)//v的正负决定增加还是减少
+{
+	for (; l < N; l += lowbit(l))
+		b[l] += v;
+}
+单点查询
+inline int ask(int x)
+{
+	int sum = 0;
+	for (; x >= 1; x -= lowbit(x))
+		sum += b[x];
+	return sum;
+}
+区间查询，只能查找差值
+inline int ask(int l，int r)
+{
+	return ask(r) -ask(l-1);
+}
+
+优先队列从小到大排序：priority_queue<int,vector<int>,greater<int> >q1;
+（默认从大到小）
+
+struct cmp1{
+	bool operator()(int x,int y)
+	{
+		return x>y;//小的优先级高 ,从小到大排 
+	}
+}; 
+struct cmp2{
+	bool operator()(const int x,const int y)
+	{
+		return tmp[x]>tmp[y];
+	}
+}; 
+struct node{
+	int x,y;
+	friend bool operator<(node a,node b)
+	{
+		return a.x>b.x;//按x从小到大排 
+	}
+};
+priority_queue<int>q1;
+priority_queue<int,vector<int>,cmp1>q2;
+priority_queue<int,vector<int>,cmp2>q3;
+priority_queue<node>q4;
+————————————————
+upper_bound查找第一个大于num的数字
+
+分数取模就用逆元，除1/a等于1乘以a^(p-2)%p
+
+iota (numbers,numbers+10,100);对一个范围赋值
+
+函数调用次数过多，加inline可加速函数调用速度
+
+判断两个字符串相等并且两个字符串还有操作时，可以记录两个字符串不同点的数量，当数量为零时，字符串相等
+
+负数注意向上取整
+
+卡特兰数：括号匹配，进出栈问题C(2n,n)-C(2n,n-1)
+1, 1, 2, 5, 14, 42, 132, 429, 1430, 4862, 16796, 58786, 208012, 742900, 2674440, 9694845, 35357670, 129644790, 477638700, 1767263190, 6564120420, 24466267020, 91482563640, 343059613650, 1289904147324, 4861946401452
+————————————————
+
+1 #include<bits/stdc++.h>
+
+输入数据大于1e5就要用scanf
+
+答案为零时要排除（-0）的情况
+
+标记法优先队列可做前缀后缀区间最值问题
+
+（a-b)%c=(a%c-b%c+c)%c减法取模要记得加上模C
+
+memset加头文件cstring
+
+树无环，可用dfs，bfs遍历
+
+用earse（）时括号内应写首尾地址
+
+运行时错误 可能是数组开小了，也可能是除0了
+
+注意 用string ans时 能ans+='a'绝对不要用ans=ans+'a',会超时
+
+string运算时耗时太长，一般用int代替计算
+
+lowbit(n)=n&(-n)
+
+除a等于乘以a^(p-2)%p
+
+用long long 时间比int多一倍
+
+变量类型尽量一致，const ll N也要一致
+
+尽量多在vector里面用array,(练习vector)
+
+有些专门恶心题会是先列后行，要看仔细了
+
+reverse(a,a+n)//翻转字符串，需要头文件algorithm
+
+
+如何输入多行字符串(含空格) getline(cin,s);头文件string
+
+字符串哈希可以双哈希，减少冲突
+
+字符串翻转reverse,截取substr,插入字符s1.insert(s1.begin(),'a')，判断子串s1.find(s2),返回位置或-1；
+
+文件提交(也可不写）
+#ifdef Local
+	freopen("x.in", "r", stdin);
+#endif
+	ios_base::sync_with_stdio(false);	cin.tie(0);
+	cout.tie(0);
+
+提交时要注意答案的范围是long long 还是int
+
+欧拉函数 φ(n)=n*(1-1/p1)(1-1/p2)(1-1/p3)*(1-1/p4)……(1-1/pn)
+欧拉函数φ(n)是小于或等于n的正整数中与n互质的数的数目
+
+质数筛（NloglogN）1e7不会超
+void primes(int n)
+{
+	memset(v, 0, sizeof v);
+	for (int i = 2; i <= n; i++)
+	{
+		if (v[i])
+			continue;
+		cout << i << endl;
+		for (int j = i; j <= n / i; j++)v[i * j] = 1;
+	}
+}
+如果实在找不到bug可以多检查题目，可能是题目漏看了一些东西
+
+
+
+JAVA:
+1.快速生成main psvm（main）
+2.输出 sout
+3.new 类名.var回车
+4.右键 JavaBean
+5 AIT + i
+6 java字符串比较是equals
+7 ctrl+alt+L自动对齐
+8 自动生成左边ctrl+alt+v
+
+邻接表
+int cnt=1;
+void add(int x, int y, int v)
+{
+	e[cnt].to = y, e[cnt].v = v, e[cnt].next = h[x], h[x] = cnt++;
+	e[cnt].to = x, e[cnt].v = v, e[cnt].next = h[y], h[y] = cnt++;
+}
+y总模板
+int h[N], e[N], ne[N], idx;
+
+// 添加一条边a->b
+void add(int a, int b)
+{
+    e[idx] = b, ne[idx] = h[a], h[a] = idx ++ ;
+}
+
+// 初始化
+idx = 0;
+memset(h, -1, sizeof h);
+
+深度优先遍历
+int dfs(int u)
+{
+    st[u] = true; // st[u] 表示点u已经被遍历过
+
+    for (int i = h[u]; i != -1; i = ne[i])
+    {
+        int j = e[i];
+        if (!st[j]) dfs(j);
+    }
+}
+组合数学
+
+加法递推1000*1000
+void init()
+{
+   c[0][0]= c[1][0] = c[1][1] = 1;
+    for(int i = 2; i < N; ++ i) {
+        c[i][0] = 1;
+        for(int j = 1; j < N; ++ j)
+            c[i][j] = (1ll * c[i - 1][j] + c[i - 1][j - 1]) % mod;
+    }
+}
+
+乘法递推
+c[0] = 1;//相当于C[n][i]
+for( register int i = 1 ; i * 2 <= n ; i ++ ) 
+	c[i] = c[n-i] = ( n - i + 1 ) * c[ i - 1 ] / i;
+
+——————————————————————————————————————
+组合逆元
+const int N = 1e6 + 7, mod = 1e9 + 7;
+int n, m, k, t; 
+int inv[N];
+int fact[N], infact[N];
+
+void init (int n)
+{
+    fact[0] = infact[0] = inv[0] = inv[1] = 1;
+    for (int i = 2; i <= n; ++ i) 
+        inv[i] = 1ll * (mod - mod / i) * inv[mod % i] % mod;
+    for (int i = 1; i <= n; ++ i) {
+        fact[i] = 1ll * fact[i - 1] * i % mod;
+        infact[i] = 1ll * infact[i - 1] * inv[i] % mod;
+    }
+}
+
+int C(int n, int m)
+{
+    if(n < m) return 0;
+    if(m == 0 || n == m) return 1;
+    return 1ll * fact[n] * infact[m] % mod * infact[n - m] % mod;
+}
+
+int main()
+{
+    init(N - 2);
+    scanf("%d", &n);
+    for (int i = 1; i <= n; ++ i) {
+        int a, b;
+        scanf("%d%d", &a, &b);
+        cout << C(a, b) << endl;
+    }
+    return 0;
+}
+————————————————————————————————————————————————
+
+
+kmp
+void kmp()
+{
+	nex[0] = -1;
+	int i = 0, j = -1;
+	while (i < n)
+	{
+		if (j == -1 || a[i] == a[j])
+		{
+			j++;
+			i++;
+			nex[i] = j;
+		}
+		else
+			j = nex[j];
+	}
+}
+int mian()
+{
+kmp();
+//字符串匹配
+int i = 0, j = -1, flag = 0;
+while (i < 2 * m && j < m)
+{
+	if (j == -1 || c[x].s[j] == c[y].s1[i])
+	{
+		j++;
+		i++;
+		if (j >= m)
+		{
+			flag = 1;//或者直接判断j就行
+			break;
+		}
+	}
+	else
+	{
+		j = nex[j];
+	}
+}
+
+return 0;
+}
+————————————————————————————————————————————————
+求next加强版num数组，对于字符串S的前i个字符构成的子串，既是它的后缀同时又是它的前缀，并且该后缀与该前缀不重叠，将这种字符串的数量记作num[i]
+#include<iostream>
+#include<cstring>
+#include<cstdio>
+using namespace std;
+const int N = 1e6 + 5;
+const long long mod = 1e9 + 7;
+long long nex[N], n, ans[N];
+char a[N];
+void next()
+{
+	nex[0] = -1;
+	int i = 0, j = -1;
+	while (i < n)
+	{
+		if (j == -1 || a[i] == a[j])
+		{
+			j++;
+			i++;
+			nex[i] = j;
+			ans[i] = ans[j] + 1;
+		}
+		else
+			j = nex[j];
+	}
+}
+
+int main()
+{
+	int t;
+	cin >> t;
+	while (t--)
+	{
+		long long res = 1, tot = 1;
+		scanf("%s", a);
+		n = strlen(a);
+		next();
+		int i = 0, j = -1;
+		while (i < n)
+		{
+			if (j == -1 || a[i] == a[j])
+			{
+				j++;
+				i++;
+				while ((j << 1) > i) j = nex[j];
+				res = (res * (ans[j] + 1)) % mod;//记得+1
+			}
+			else
+				j = nex[j];
+		}
+		cout << res << endl;
+	}
+	return 0;
+}
+
+——————————————————————————————————————
+字符串哈希
+（进制是长度r-l）
+当一个字符串规模很大，并且需要多次访问该字符串或者子串的时候，我们可以用哈希函数对每个字符串进行哈希，分别映射到不同的数字中去，即一个整数哈希值，然后我们可以根据哈希值找到需要的字符串。
+
+#include<iostream>
+#include<cstring>
+#include<cstdio>
+#include<algorithm>
+#include<set>
+using namespace std;
+const int N = 2e5 + 5;
+#define ull unsigned long long
+#define base 13131
+ull h[N], p[N], h1[N];
+int a[N], b[N];
+ull get1(int l, int r)
+{
+	return h[r] - h[l - 1] * p[r - l + 1];
+}
+ull get2(int l, int r)
+{
+	return h1[l] - h1[r + 1] * p[r - l + 1];
+}
+int main()
+{
+	int n;
+	cin >> n;
+	for (int i = 1; i <= n; i++)
+	{
+		scanf("%d", &a[i]);
+	}
+	p[0] = 1;
+	for (int i = 1; i <= n; i++)
+	{
+		h[i] = h[i - 1] * base + a[i];
+		p[i] = p[i - 1] * base;
+	}
+	for (int i = n; i > 0; i--)
+	{
+		h1[i] = h1[i + 1] * base + a[i];
+	}
+return 0;
+}
+——————————————————————————————————————
+字典树
+字典树一般开大一点，tree[N][2];//32*n或者字符串总长度(并不需要开26*n)
+01字典树
+#include<iostream>
+#include<cstring>
+#include<cstdio>
+using namespace std;
+const int N = 1e6 + 5;
+#define ll long long
+ll tree[N][2], color[N], a[N];
+ll cnt = 1, ans = 0;
+
+void insert(ll a)
+{
+	int p = 0;
+	for (int i = 32; i >= 0; i--)
+	{
+		ll idx = (a >> i) & 1;
+		if (tree[p][idx] == 0)
+		{
+			tree[p][idx] = cnt++;
+		}
+		p = tree[p][idx];
+	}
+	color[p] = a;
+}
+
+void query(ll x)
+{
+	int p = 0;
+	for (int i = 32; i >= 0; i--)
+	{
+		ll idx = (x >> i) & 1;
+		if (tree[p][idx ^ 1])
+		{
+			p = tree[p][idx ^ 1];
+		}
+		else
+			p = tree[p][idx];
+	}
+	//cout << color[p] << x << endl;
+	ans = max(ans, color[p] ^ x);
+}
+——————————————————————————————————————
+L语言，最长前缀识别（多个单词组成文本前缀）
+用已知字典去识别一个串，求最长可识别前缀（指能将此前缀分解为字典里面的单词）
+#include<iostream>
+#include<cstring>
+#include<cstdio>
+#include<unordered_map>
+using namespace std;
+const int N = 1e6 + 5;
+int tree[N][30], color[N], flag[N];
+int cnt = 1, ans;
+char b[N];
+unordered_map<string, int>umap;
+void insert(char a[])
+{
+	int p = 0, len = strlen(a);
+	for (int i = 0; i < len; i++)
+	{
+		if (tree[p][a[i] - 'a'] == 0)
+		{
+			tree[p][a[i] - 'a'] = cnt++;
+		}
+		p = tree[p][a[i] - 'a'];
+
+	}
+	color[p] = 1;
+}
+void query(char a[], int k)
+{
+	int p = 0, len = strlen(b + 1), tot = 0;
+	for (int i = k; i <= len; i++)//跳过开头
+	{
+		tot++;
+
+		if (tree[p][a[i] - 'a'])
+		{
+			p = tree[p][a[i] - 'a'];
+		}
+		else if (tree[p][a[i] - 'a'] == 0)
+		{
+			//cout << i;
+			return;
+		}
+		if (color[p] == 1)
+		{
+
+			ans = max(ans, i); //cout << ans;
+			flag[i] = 1;
+		}
+	}
+}
+
+int main()
+{
+	int n, m;
+	char a[20];
+	cin >> n >> m;
+	for (int i = 0; i < n; i++)
+	{
+		scanf("%s", a);
+		insert(a);
+	}
+
+	for (int i = 0; i < m; i++)
+	{
+		ans = 0;
+		scanf("%s", b + 1);
+		memset(flag, 0, sizeof flag);
+		flag[0] = 1;
+		int len = strlen(b + 1);
+		for (int k = 1; k <= len; k++)
+		{
+			if (flag[k - 1])
+			{
+				//cout << k;
+				query(b, k);
+			}
+		}
+		cout << ans << endl;
+	}
+}
+——————————————————————————————————————
+马拉车算法
+#include <iostream>
+#include <string>
+using namespace std;
+const int maxn = 1000006;
+int p[maxn];
+string s, t;
+int main() {
+    cin >> s;
+    int n = s.size();
+    t = "#";
+    for (int i = 0; i < n; i++) {
+        t += '#';
+        t += s[i];
+    }
+    t += '#';
+    int m = t.size();
+    int mid = 0, r = 0;
+    int len = 0, st = 0;//回文串长度和起始位置
+    for (int i = 1; i < m - 1; i++) {
+        int j = mid * 2 - i;
+        if (i < r) //右边半径内
+            p[i] = min(r - i, p[j]);//防止超出r
+        else p[i] = 0; //>=r情况
+        while (t[i + 1 + p[i]] == t[i - 1 - p[i]])
+            p[i]++; //中心扩展
+        if (i + p[i] > r) { //更新r
+            mid = i;
+            r = i + p[i];
+        }
+        if (p[i] > len) { //顺便更新答案
+            len = p[i];
+            st = (i - p[i]) / 2;
+        }
+    }
+    cout << len << "\n" << s.substr(st, len);
+    return 0;
+}
+-------------------------------------------------------------------------------------------------
+
+AC自动机，求文本串中含单词数
+题意就是给n 个单词，然后给你一个文本串。问在这个文本串中出现这n个单词的数量
+#include<iostream>
+#include<cstring>
+#include<cstdio>
+#include<queue>
+using namespace std;
+const int N = 1e6 + 5;
+int tree[N][26], color[N], fail[N];
+int cnt = 1;
+char s[N], a[55];
+void insert(char s[])
+{
+	int p = 0, len = strlen(s);
+	for (int i = 0; i < len; i++)
+	{
+		if (tree[p][s[i] - 'a'] == 0)
+		{
+			tree[p][s[i] - 'a'] = cnt++;
+		}
+		p = tree[p][s[i] - 'a'];
+	}
+	color[p]++;
+}
+
+void getfail()
+{
+	queue<int>q;
+	for (int i = 0; i < 26; i++)
+	{
+		if (tree[0][i])
+		{
+			fail[tree[0][i]] = 0;
+			q.push(tree[0][i]);
+		}
+	}
+	while (q.size())
+	{
+		int now = q.front();
+		q.pop();
+		for (int i = 0; i < 26; i++)
+		{
+			if (tree[now][i])
+			{
+				fail[tree[now][i]] = tree[fail[now]][i];
+				q.push(tree[now][i]);
+			}
+			else
+				tree[now][i] = tree[fail[now]][i];
+		}
+	}
+}
+
+int query(char s[])
+{
+	int now = 0, len = strlen(s), ans = 0;
+	for (int i = 0; i < len; i++)
+	{
+		now = tree[now][s[i] - 'a'];
+		for (int j = now; j && color[j] != -1; j = fail[j])
+		{
+			ans += color[j];//加出现次数
+			color[j] = -1;//防止多次加
+		}
+	}
+	return ans;
+}
+int main()
+{
+	int t;
+	cin >> t;
+	while (t--)
+	{
+		memset(color, 0, sizeof color);
+		memset(fail, 0, sizeof fail);
+		memset(tree, 0, sizeof tree);
+		int n;
+		cin >> n;
+		for (int i = 0; i < n; i++)
+		{
+			scanf("%s", a);
+
+			insert(a);
+		}
+		scanf("%s", s);
+		getfail();
+		cout << query(s) << endl;
+	}
+	return 0;
+}
+————————————————————————————————————
+字符串相邻两个交换使得前后两个字符串相等，求逆序对
+#include<iostream>
+#include<cstring>
+#include<cstdio>
+#include<vector>
+#include<algorithm>
+using namespace std;
+const int N = 2e5 + 5;
+
+int a[N], c[N], sum[30], cnt[30];
+vector<int>v[30];
+int lowbit(int x)
+{
+	return (x & -x);
+}
+int query(int x)
+{
+	long long ans = 0;
+	while (x)
+	{
+		ans += c[x];
+		x -= lowbit(x);
+	}
+	return ans;
+}
+void add(int x, int val)
+{
+	for (; x < N; x += lowbit(x))
+		c[x] += val;
+}
+int main()
+{
+	string s, pre, hou;
+	long long ans = 0;
+	int n;
+	cin >> n;
+	cin >> s;
+	s = " " + s;
+	for (int i = 1; i <= n; i++)
+	{
+		sum[s[i] - 'a']++;
+	}
+	for (int i = 1; i <= n; i++)
+	{
+		int k = s[i] - 'a';
+		cnt[k]++;
+		if (cnt[k] <= sum[k] / 2)
+		{
+			pre += s[i];
+			ans += i - pre.length();
+		}
+		else
+			hou += s[i];
+	}
+	pre = " " + pre;
+	hou = " " + hou;
+
+	//cout << ans << endl;
+	for (int i = 1; i <= n / 2; i++)
+	{
+		v[pre[i] - 'a'].push_back(i);
+	}
+	for (int i = 0; i < 30; i++)
+	{
+		reverse(v[i].begin(), v[i].end());
+	}
+	for (int i = 1; i <= n / 2; i++)
+	{
+		a[i] = v[hou[i] - 'a'].back();
+		v[hou[i] - 'a'].pop_back();
+	}
+	for (int i = n / 2; i >= 1; i--)//最重要的是从后往前求，54321就求12345
+	{
+		ans += query(a[i] - 1);
+		add(a[i], 1);
+	}
+	cout << ans << endl;
+	return 0;
+}
+——————————————————————————————————————
+
+STL大全
+
+vector, 变长数组，倍增的思想
+    size()  返回元素个数
+    empty()  返回是否为空
+    clear()  清空
+    front()/back()
+    push_back()/pop_back()
+    begin()/end()
+    []
+    支持比较运算，按字典序
+
+pair<int, int>
+    first, 第一个元素
+    second, 第二个元素
+    支持比较运算，以first为第一关键字，以second为第二关键字（字典序）
+
+string，字符串
+    size()/length()  返回字符串长度
+    empty()
+    clear()
+    substr(起始下标，(子串长度))  返回子串
+    c_str()  返回字符串所在字符数组的起始地址
+
+queue, 队列
+    size()
+    empty()
+    push()  向队尾插入一个元素
+    front()  返回队头元素
+    back()  返回队尾元素
+    pop()  弹出队头元素
+
+priority_queue, 优先队列，默认是大根堆
+    size()
+    empty()
+    push()  插入一个元素
+    top()  返回堆顶元素
+    pop()  弹出堆顶元素
+    定义成小根堆的方式：priority_queue<int, vector<int>, greater<int>> q;
+
+stack, 栈
+    size()
+    empty()
+    push()  向栈顶插入一个元素
+    top()  返回栈顶元素
+    pop()  弹出栈顶元素
+
+deque, 双端队列
+    size()
+    empty()
+    clear()
+    front()/back()
+    push_back()/pop_back()
+    push_front()/pop_front()
+    begin()/end()
+    []
+
+set, map, multiset, multimap, 基于平衡二叉树（红黑树），动态维护有序序列
+    size()
+    empty()
+    clear()
+    begin()/end()
+    ++, -- 返回前驱和后继，时间复杂度 O(logn)
+
+    set/multiset
+        insert()  插入一个数
+        find()  查找一个数
+        count()  返回某一个数的个数
+        erase()
+            (1) 输入是一个数x，删除所有x   O(k + logn)
+            (2) 输入一个迭代器，删除这个迭代器
+        lower_bound()/upper_bound()
+            lower_bound(x)  返回大于等于x的最小的数的迭代器
+            upper_bound(x)  返回大于x的最小的数的迭代器
+    map/multimap
+        insert()  插入的数是一个pair
+        erase()  输入的参数是pair或者迭代器
+        find()
+        []  注意multimap不支持此操作。 时间复杂度是 O(logn)
+        lower_bound()/upper_bound()
+
+unordered_set, unordered_map, unordered_multiset, unordered_multimap, 哈希表
+    和上面类似，增删改查的时间复杂度是 O(1)
+    不支持 lower_bound()/upper_bound()， 迭代器的++，--
+
+bitset, 圧位
+    bitset<10000> s;
+    ~, &, |, ^
+    >>, <<
+    ==, !=
+    []
+
+    count()  返回有多少个1
+
+    any()  判断是否至少有一个1
+    none()  判断是否全为0
+
+    set()  把所有位置成1
+    set(k, v)  将第k位变成v
+    reset()  把所有位变成0
+    flip()  等价于~
+    flip(k) 把第k位取反
