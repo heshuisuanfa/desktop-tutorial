@@ -1,6 +1,7 @@
 
 memset可以用t代替，要注意t不能为0
 
+```c++
 #include<iostream>//差分矩阵
 #include<cstring>
 #include<cstdio>
@@ -44,8 +45,9 @@ int main()
 
     return 0;
 }
-
+```
 扩展欧几里得
+```c++
 #include<bits/stdc++.h>
 using namespace std;
 int exgcd(int a, int b, int &x, int &y){//返回gcd(a,b) 并求出解(引用带回)
@@ -68,6 +70,7 @@ int main(){
     }
     return 0;
 }
+```
 1. 扩展欧几里得
 用于求解方程 ax+by=gcd(a,b) 的解
 
@@ -114,6 +117,7 @@ ax+my=b
 特别的 当 b=1 且 a与m互质时 则所求的x即为a的逆元
 
 线性同余方程
+```c++
 #include<iostream>
 #include<cstring>
 #include<cstdio>
@@ -153,7 +157,7 @@ int main()
 	}
 	return 0;
 }
-
+```
 朴素Dijkstra和堆优化Dijkstra
 
 朴素版dijkstra适合稠密图(边数比较多)
@@ -163,7 +167,7 @@ int main()
 加入集合S：O(n)O(n)
 更新距离：O(m)O(m)
 所以总的时间复杂度为O(n2)
-
+```c++
 #include<iostream>
 #include<cstring>
 #include<cstdio>
@@ -212,7 +216,7 @@ int main()
     cout << dijkstra() << endl;
     return 0;
 }
-
+```
 堆优化版本
 堆优化版的dijkstra是对朴素版dijkstra进行了优化，在朴素版dijkstra中时间复杂度最高的寻找距离
 最短的点O(n^2)可以使用最小堆优化。
@@ -225,7 +229,7 @@ int main()
 寻找路径最短的点：O(n)O(n)
 加入集合S：O(n)O(n)
 更新距离：O(mlogn)
-
+```c++
 #include<iostream>
 #include<cstring>
 #include<queue>
@@ -302,9 +306,10 @@ int main()
 
     return 0;
 }
-
+```
 bellman_ford
 有边数限制的最短路径
+```c++
 #include"iostream"
 #include"cstring"
 #include"cstdio"
@@ -346,9 +351,10 @@ int main() {
     bellman_ford();
     return 0;
 }
+```
 
 队列优化bellman_ford
-
+```c++
 #include<iostream>
 #include<cstring>
 #include<cstdio>
@@ -403,7 +409,7 @@ int main()
 	}
 	return 0;
 }
-
+```
 **数据构造**
 
 ```c++
