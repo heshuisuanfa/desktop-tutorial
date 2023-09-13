@@ -1564,7 +1564,191 @@ int main()
 }
 
 ```
+**区间修改，区间最值修改min(a[i],x),区间求和，区间最值查询(max),历史区间最值查询(maxb)**
 
+```c++
+//洛谷P6242
+#include<bits/stdc++.h>
+using namespace std;
+#define ll long long
+const int N = 5e5 + 5;
+ll sum[N << 2], ma[N << 2], se[N << 2], mas[N << 2], num[N << 2], a[N], la[N << 2];
+ll add1[N << 2], add2[N << 2], add3[N << 2], add4[N << 2];
+void push_up(int p)
+{
+	mas[p] = max(mas[p << 1], mas[p << 1 | 1]);
+	ma[p] = max(ma[p << 1], ma[p << 1 | 1]);
+	sum[p] = sum[p << 1] + sum[p << 1 | 1];
+	if (ma[p << 1] == ma[p << 1 | 1])
+	{
+		se[p] = max(se[p << 1], se[p << 1 | 1]);
+		num[p] = num[p << 1] + num[p << 1 | 1];
+	}
+	else
+	{
+		se[p] = max(se[p << 1], se[p << 1 | 1]);
+		se[p] = max(se[p], min(ma[p << 1], ma[p << 1 | 1]));
+		num[p] = ma[p << 1] > ma[p << 1 | 1] ? num[p << 1] : num[p << 1 | 1];
+	}
+}
+void build(int p, int pl, int pr)
+{
+	if (pl == pr)
+	{
+		scanf("%lld", &sum[p]);
+		ma[p] = sum[p];
+		se[p] = -2e9;
+		mas[p] = sum[p];
+		num[p] = 1;
+		return;
+	}
+	ll mid = (pl + pr) >> 1;
+	build(p << 1, pl, mid);
+	build(p << 1 | 1, mid + 1, pr);
+	push_up(p);
+}
+inline void change(int k1, int k2, int k3, int k4, int p, int len)
+{
+	sum[p] += 1ll*num[p] * k1 + 1ll*(len - num[p]) * k2;
+	mas[p] = max(mas[p], ma[p] + k3);
+	ma[p] += k1;
+	if (se[p] != -2e9)se[p] += k2;
+	add3[p] = max(add3[p], add1[p] + k3);
+	add4[p] = max(add4[p], add2[p] + k4);
+	add1[p] += k1;
+	add2[p] += k2;
+}
+
+inline void push_down(int p, int len)
+{
+	int maxn = max(ma[p << 1], ma[p << 1 | 1]);
+	if (maxn == ma[p << 1])
+		change(add1[p], add2[p], add3[p], add4[p], p << 1, (len + 1) >> 1);
+	else
+		change(add2[p], add2[p], add4[p], add4[p], p << 1, (len + 1) >> 1);
+	if (ma[p << 1 | 1] == maxn)
+		change(add1[p], add2[p], add3[p], add4[p], p << 1 | 1, len >> 1);
+	else
+		change(add2[p], add2[p], add4[p], add4[p], p << 1 | 1, len >> 1);
+	add1[p] = add2[p] = add3[p] = add4[p] = 0;
+}
+
+void update2(int p, int pl, int pr, int L, int R, int x)
+{
+
+	if (L > pr || R < pl || ma[p] <= x)return;
+	if (L <= pl && R >= pr && se[p] < x)
+	{
+		int k = ma[p] - x;
+		sum[p] -= 1ll*k * num[p];
+		ma[p] = x;
+		add1[p] -= k;
+		return;
+	}
+	push_down(p, pr - pl + 1);
+	ll mid = (pl + pr) >> 1;
+	update2(p << 1, pl, mid, L, R, x);
+	update2(p << 1 | 1, mid + 1, pr, L, R, x);
+	push_up(p);
+}
+
+void update1(int p, int pl, int pr, int L, int R, int d)
+{
+	if (L > pr || R < pl)return;
+	if (L <= pl && R >= pr)
+	{
+		sum[p] += 1ll*d * (pr - pl + 1);//更新值
+		ma[p] += d;
+		mas[p] = max(mas[p], ma[p]);
+		if (se[p] != -2e9)se[p] += d;
+		add1[p] += d, add2[p] += d;
+		add3[p] = max(add3[p], add1[p]);
+		add4[p] = max(add4[p], add2[p]);
+		return;
+	}
+	push_down(p, pr - pl + 1);
+	ll mid = (pl + pr) >> 1;
+	update1(p << 1, pl, mid, L, R, d);
+	update1(p << 1 | 1, mid + 1, pr, L, R, d);
+	push_up(p);
+}
+
+ll query_sum(ll p, ll pl, ll pr, ll L, ll R)
+{
+	if (L > pr || R < pl)return 0;
+	if (L <= pl && R >= pr)
+	{
+		return sum[p];
+	}
+	push_down(p, pr - pl + 1);
+	ll mid = (pl + pr) >> 1;
+	return query_sum(p << 1, pl, mid, L, R) + query_sum(p << 1 | 1, mid + 1, pr, L, R);
+}
+
+ll query_ma(ll p, ll pl, ll pr, ll L, ll R)
+{
+	if (L > pr || R < pl)return -2e9;
+	if (L <= pl && R >= pr)
+	{
+		return ma[p];
+	}
+	//push_down1(p, pl, pr);
+	push_down(p, pr - pl + 1);
+	ll mid = (pl + pr) >> 1, res = -2e9;
+	return max(query_ma(p << 1, pl, mid, L, R), query_ma(p << 1 | 1, mid + 1, pr, L, R));
+}
+
+ll query_mas(ll p, ll pl, ll pr, ll L, ll R)
+{
+	if (L <= pl && R >= pr)
+	{
+		return mas[p];
+	}
+	//push_down1(p, pl, pr);
+	push_down(p, pr - pl + 1);
+	ll mid = (pl + pr) >> 1, res = -2e9;
+	if (L <= mid)res = query_mas(p << 1, pl, mid, L, R);
+	if (R > mid)res = max(res, query_mas(p << 1 | 1, mid + 1, pr, L, R));
+	return res;
+}
+int main()
+{
+	int n, m;
+	cin >> n >> m;
+	build(1, 1, n);
+	//cout << sum[1] << sum[2] << endl;
+	while (m--)
+	{
+
+		int f, l, r, k;
+		cin >> f >> l >> r;
+		if (f == 1)
+		{
+			cin >> k;
+			update1(1, 1, n, l, r, k);
+		}
+		if (f == 2)
+		{
+			cin >> k;
+			update2(1, 1, n, l, r, k);
+		}
+		if (f == 3)
+		{
+			cout << query_sum(1, 1, n, l, r) << endl;
+		}
+		if (f == 4)
+		{
+			cout << query_ma(1, 1, n, l, r) << endl;
+		}
+		if (f == 5)
+		{
+			cout << query_mas(1, 1, n, l, r) << endl;
+		}
+	}
+
+	return 0;
+}
+```
 **树的重心**
 
 ```c++
@@ -2137,191 +2321,7 @@ int main()
 }
 ```
 
-**区间修改，区间最值修改min(a[i],x),区间求和，区间最值查询(max),历史区间最值查询(maxb)**
 
-```c++
-//洛谷P6242
-#include<bits/stdc++.h>
-using namespace std;
-#define ll long long
-const int N = 5e5 + 5;
-ll sum[N << 2], ma[N << 2], se[N << 2], mas[N << 2], num[N << 2], a[N], la[N << 2];
-ll add1[N << 2], add2[N << 2], add3[N << 2], add4[N << 2];
-void push_up(int p)
-{
-	mas[p] = max(mas[p << 1], mas[p << 1 | 1]);
-	ma[p] = max(ma[p << 1], ma[p << 1 | 1]);
-	sum[p] = sum[p << 1] + sum[p << 1 | 1];
-	if (ma[p << 1] == ma[p << 1 | 1])
-	{
-		se[p] = max(se[p << 1], se[p << 1 | 1]);
-		num[p] = num[p << 1] + num[p << 1 | 1];
-	}
-	else
-	{
-		se[p] = max(se[p << 1], se[p << 1 | 1]);
-		se[p] = max(se[p], min(ma[p << 1], ma[p << 1 | 1]));
-		num[p] = ma[p << 1] > ma[p << 1 | 1] ? num[p << 1] : num[p << 1 | 1];
-	}
-}
-void build(int p, int pl, int pr)
-{
-	if (pl == pr)
-	{
-		scanf("%lld", &sum[p]);
-		ma[p] = sum[p];
-		se[p] = -2e9;
-		mas[p] = sum[p];
-		num[p] = 1;
-		return;
-	}
-	ll mid = (pl + pr) >> 1;
-	build(p << 1, pl, mid);
-	build(p << 1 | 1, mid + 1, pr);
-	push_up(p);
-}
-inline void change(int k1, int k2, int k3, int k4, int p, int len)
-{
-	sum[p] += 1ll*num[p] * k1 + 1ll*(len - num[p]) * k2;
-	mas[p] = max(mas[p], ma[p] + k3);
-	ma[p] += k1;
-	if (se[p] != -2e9)se[p] += k2;
-	add3[p] = max(add3[p], add1[p] + k3);
-	add4[p] = max(add4[p], add2[p] + k4);
-	add1[p] += k1;
-	add2[p] += k2;
-}
-
-inline void push_down(int p, int len)
-{
-	int maxn = max(ma[p << 1], ma[p << 1 | 1]);
-	if (maxn == ma[p << 1])
-		change(add1[p], add2[p], add3[p], add4[p], p << 1, (len + 1) >> 1);
-	else
-		change(add2[p], add2[p], add4[p], add4[p], p << 1, (len + 1) >> 1);
-	if (ma[p << 1 | 1] == maxn)
-		change(add1[p], add2[p], add3[p], add4[p], p << 1 | 1, len >> 1);
-	else
-		change(add2[p], add2[p], add4[p], add4[p], p << 1 | 1, len >> 1);
-	add1[p] = add2[p] = add3[p] = add4[p] = 0;
-}
-
-void update2(int p, int pl, int pr, int L, int R, int x)
-{
-
-	if (L > pr || R < pl || ma[p] <= x)return;
-	if (L <= pl && R >= pr && se[p] < x)
-	{
-		int k = ma[p] - x;
-		sum[p] -= 1ll*k * num[p];
-		ma[p] = x;
-		add1[p] -= k;
-		return;
-	}
-	push_down(p, pr - pl + 1);
-	ll mid = (pl + pr) >> 1;
-	update2(p << 1, pl, mid, L, R, x);
-	update2(p << 1 | 1, mid + 1, pr, L, R, x);
-	push_up(p);
-}
-
-void update1(int p, int pl, int pr, int L, int R, int d)
-{
-	if (L > pr || R < pl)return;
-	if (L <= pl && R >= pr)
-	{
-		sum[p] += 1ll*d * (pr - pl + 1);//更新值
-		ma[p] += d;
-		mas[p] = max(mas[p], ma[p]);
-		if (se[p] != -2e9)se[p] += d;
-		add1[p] += d, add2[p] += d;
-		add3[p] = max(add3[p], add1[p]);
-		add4[p] = max(add4[p], add2[p]);
-		return;
-	}
-	push_down(p, pr - pl + 1);
-	ll mid = (pl + pr) >> 1;
-	update1(p << 1, pl, mid, L, R, d);
-	update1(p << 1 | 1, mid + 1, pr, L, R, d);
-	push_up(p);
-}
-
-ll query_sum(ll p, ll pl, ll pr, ll L, ll R)
-{
-	if (L > pr || R < pl)return 0;
-	if (L <= pl && R >= pr)
-	{
-		return sum[p];
-	}
-	push_down(p, pr - pl + 1);
-	ll mid = (pl + pr) >> 1;
-	return query_sum(p << 1, pl, mid, L, R) + query_sum(p << 1 | 1, mid + 1, pr, L, R);
-}
-
-ll query_ma(ll p, ll pl, ll pr, ll L, ll R)
-{
-	if (L > pr || R < pl)return -2e9;
-	if (L <= pl && R >= pr)
-	{
-		return ma[p];
-	}
-	//push_down1(p, pl, pr);
-	push_down(p, pr - pl + 1);
-	ll mid = (pl + pr) >> 1, res = -2e9;
-	return max(query_ma(p << 1, pl, mid, L, R), query_ma(p << 1 | 1, mid + 1, pr, L, R));
-}
-
-ll query_mas(ll p, ll pl, ll pr, ll L, ll R)
-{
-	if (L <= pl && R >= pr)
-	{
-		return mas[p];
-	}
-	//push_down1(p, pl, pr);
-	push_down(p, pr - pl + 1);
-	ll mid = (pl + pr) >> 1, res = -2e9;
-	if (L <= mid)res = query_mas(p << 1, pl, mid, L, R);
-	if (R > mid)res = max(res, query_mas(p << 1 | 1, mid + 1, pr, L, R));
-	return res;
-}
-int main()
-{
-	int n, m;
-	cin >> n >> m;
-	build(1, 1, n);
-	//cout << sum[1] << sum[2] << endl;
-	while (m--)
-	{
-
-		int f, l, r, k;
-		cin >> f >> l >> r;
-		if (f == 1)
-		{
-			cin >> k;
-			update1(1, 1, n, l, r, k);
-		}
-		if (f == 2)
-		{
-			cin >> k;
-			update2(1, 1, n, l, r, k);
-		}
-		if (f == 3)
-		{
-			cout << query_sum(1, 1, n, l, r) << endl;
-		}
-		if (f == 4)
-		{
-			cout << query_ma(1, 1, n, l, r) << endl;
-		}
-		if (f == 5)
-		{
-			cout << query_mas(1, 1, n, l, r) << endl;
-		}
-	}
-
-	return 0;
-}
-```
 
 **快速读写**
 
@@ -2365,35 +2365,3 @@ int main()
 	return 0;
 }
 ```
-
-**数据构造**
-
-```c++
-#include<iostream>
-#include<time.h>
-#include<stdlib.h>
-using namespace std;
-int main()
-{
-	srand(time(nullptr));
-	int t = 100;
-	while (t--)
-	{
-		int n = rand() % 10 + 1;//产生一个随机数
-		cout << n << endl;
-		for (int i = 0; i < n; i++)
-		{
-			cout << rand() % 1000 << ' ';
-		}
-		cout << endl;
-		for (int i = 0; i < n; i++)
-		{
-			cout << rand() % 2 << ' ';
-		}
-		cout << endl;
-	}
-
-	return 0;
-}
-```
-
